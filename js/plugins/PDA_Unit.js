@@ -14,34 +14,34 @@ var PDA = PDA || {};
 PDA.Unit = PDA.Unit || {};
 
 PDA.Unit.Units = [
-    { name: "settler", label: "Settler", requires: "", characterIndex: 5, characterName: "Vehicle", attack: 0, defence: 1, move: 1, production: 40, price: 320, buildRoads: true, buildMines: true, buildIrrigation: true, buildFortresses: true, cleanPollution: true, foundCity: true, populationCost: 1 },
-    { name: "militia", label: "Militia", requires: "", characterIndex: 2, characterName: "People1", attack: 1, defence: 1, move: 1, production: 10, price: 50, obsolete: "gunpowder" },
-    { name: "cavalry", label: "Cavalry", requires: "horseback", characterIndex: 2, characterName: "People4", attack: 2, defence: 1, move: 2, production: 20, price: 120, obsolete: "conscription" },
-    { name: "legion", label: "Legion", requires: "iron", characterIndex: 6, characterName: "People4", attack: 3, defence: 1, move: 3, production: 20, price: 120, obsolete: "conscription" },
-    { name: "phalanx", label: "Phalanx", requires: "bronze", characterIndex: 4, characterName: "People1", attack: 1, defence: 2, move: 1, production: 20, price: 120, obsolete: "gunpowder" },
-    { name: "diplomat", label: "Diplomat", requires: "writing", characterIndex: 5, characterName: "People3", attack: 0, defence: 0, move: 2, production: 30, price: 210, ignoreAdjacent: true },
-    { name: "musketeer", label: "Musketeer", requires: "gunpowder", characterIndex: 4, characterName: "Actor2", attack: 2, defence: 3, move: 1, production: 30, price: 210, obsolete: "conscription" },
-    { name: "rifleman", label: "Rifleman", requires: "conscription", characterIndex: 4, characterName: "Actor1", attack: 3, defence: 5, move: 1, production: 30, price: 210 },
-    { name: "cannon", label: "Cannon", requires: "metallurgy", characterIndex: 2, characterName: "Actor1", attack: 8, defence: 1, move: 1, production: 40, price: 320, obsolete: "robotics" },
-    { name: "catapult", label: "Catapult", requires: "mathematics", characterIndex: 6, characterName: "Actor1", attack: 6, defence: 1, move: 1, production: 40, price: 320, obsolete: "metallurgy" },
-    { name: "chariot", label: "Chariot", requires: "wheel", characterIndex: 4, characterName: "Vehicle", attack: 4, defence: 1, move: 2, production: 40, price: 320, obsolete: "chivalry" },
-    { name: "knight", label: "Knight", requires: "chivalry", characterIndex: 6, characterName: "Actor3", attack: 4, defence: 2, move: 2, production: 40, price: 320, obsolete: "automobile" },
-    { name: "caravan", label: "Caravan", requires: "trade", characterIndex: 4, characterName: "People4", attack: 0, defence: 1, move: 1, production: 50, price: 450, ignoreAdjacent: true, tradeRoutes: true },
-    { name: "mech", label: "Mech. Infantry", requires: "unions", characterIndex: 0, characterName: "SF_Vehicle", attack: 6, defence: 6, move: 3, production: 50, price: 450 },
-    { name: "artillery", label: "Artillery", requires: "robotics", characterIndex: 3, characterName: "SF_Vehicle", attack: 12, defence: 2, move: 2, production: 60, price: 600, ignoreWalls: true },
-    { name: "armour", label: "Armour", requires: "automobile", characterIndex: 6, characterName: "SF_Vehicle", attack: 10, defence: 5, move: 3, production: 80, price: 960 },
-    { name: "trireme", label: "Trireme", requires: "maps", characterIndex: 0, characterName: "Vehicle", attack: 1, defence: 0, move: 3, production: 40, price: 320, cargo: 2 },
-    { name: "sail", label: "Sail", requires: "navigation", characterIndex: 7, characterName: "Vehicle", attack: 1, defence: 1, move: 3, production: 40, price: 320, cargo: 3 },
-    { name: "frigate", label: "Frigate", requires: "magnetism", characterIndex: 1, characterName: "Vehicle", attack: 2, defence: 2, move: 3, production: 40, price: 320, cargo: 4 },
-    { name: "transport", label: "Transport", requires: "industry", characterIndex: 7, characterName: "SF_Vehicle", attack: 0, defence: 3, move: 4, production: 50, price: 450, cargo: 8 },
-    { name: "submarine", label: "Submarine", requires: "mass", characterIndex: 3, characterName: "Vehicle", attack: 8, defence: 2, move: 3, production: 50, price: 450, sight: 2, cannotAttackLand: true, invisibleOnLand: true, onlyVisibleAdjacent: true },
-    { name: "ironclad", label: "Ironclad", requires: "steam", characterIndex: 7, characterName: "SF_Vehicle", attack: 4, defence: 4, move: 4, production: 60, price: 600, obsolete: "combustion" },
-    { name: "cruiser", label: "Cruiser", requires: "combustion", characterIndex: 3, characterName: "Vehicle", attack: 6, defence: 6, move: 6, production: 80, price: 960, sight: 2 },
-    { name: "carrier", label: "Carrier", requires: "advanced", characterIndex: 3, characterName: "Vehicle", attack: 1, defence: 12, move: 5, production: 160, price: 3200, sight: 2, airCargo: 8 },
-    { name: "battleship", label: "Battleship", requires: "steel", characterIndex: 3, characterName: "Vehicle", attack: 18, defence: 12, move: 4, production: 160, price: 3200, sight: 2 },
-    { name: "fighter", label: "Fighter", requires: "flight", characterIndex: 2, characterName: "SF_Vehicle", attack: 4, defence: 2, move: 10, production: 60, price: 600 },
-    { name: "bomber", label: "Bomber", requires: "advanced", characterIndex: 2, characterName: "SF_Vehicle", attack: 12, defence: 1, move: 8, production: 120, price: 1920, ignoreWalls: true, sight: 2, attackEndsTurn: true },
-    { name: "nuclear", label: "Nuclear", requires: "rocketry", characterIndex: 2, characterName: "SF_Vehicle", attack: 99, defence: 0, move: 16, production: 160, price: 3200, invisibleUntilAttack: true, ignoreZoneControl: true, causeLandPollution: true, wonder: "manhattan" }
+    { name: "settler", label: "Settler", requires: "", characterIndex: 5, characterName: "Vehicle", attack: 0, defence: 1, move: 1, construct: 40, price: 320, buildRoads: true, buildMines: true, buildIrrigation: true, buildFortresses: true, cleanPollution: true, foundCity: true, populationCost: 1 },
+    { name: "militia", label: "Militia", requires: "", characterIndex: 2, characterName: "People1", attack: 1, defence: 1, move: 1, construct: 10, price: 50, obsolete: "gunpowder" },
+    { name: "cavalry", label: "Cavalry", requires: "horseback", characterIndex: 2, characterName: "People4", attack: 2, defence: 1, move: 2, construct: 20, price: 120, obsolete: "conscription" },
+    { name: "legion", label: "Legion", requires: "iron", characterIndex: 6, characterName: "People4", attack: 3, defence: 1, move: 3, construct: 20, price: 120, obsolete: "conscription" },
+    { name: "phalanx", label: "Phalanx", requires: "bronze", characterIndex: 4, characterName: "People1", attack: 1, defence: 2, move: 1, construct: 20, price: 120, obsolete: "gunpowder" },
+    { name: "diplomat", label: "Diplomat", requires: "writing", characterIndex: 5, characterName: "People3", attack: 0, defence: 0, move: 2, construct: 30, price: 210, ignoreAdjacent: true },
+    { name: "musketeer", label: "Musketeer", requires: "gunpowder", characterIndex: 4, characterName: "Actor2", attack: 2, defence: 3, move: 1, construct: 30, price: 210, obsolete: "conscription" },
+    { name: "rifleman", label: "Rifleman", requires: "conscription", characterIndex: 4, characterName: "Actor1", attack: 3, defence: 5, move: 1, construct: 30, price: 210 },
+    { name: "cannon", label: "Cannon", requires: "metallurgy", characterIndex: 2, characterName: "Actor1", attack: 8, defence: 1, move: 1, construct: 40, price: 320, obsolete: "robotics" },
+    { name: "catapult", label: "Catapult", requires: "mathematics", characterIndex: 6, characterName: "Actor1", attack: 6, defence: 1, move: 1, construct: 40, price: 320, obsolete: "metallurgy" },
+    { name: "chariot", label: "Chariot", requires: "wheel", characterIndex: 4, characterName: "Vehicle", attack: 4, defence: 1, move: 2, construct: 40, price: 320, obsolete: "chivalry" },
+    { name: "knight", label: "Knight", requires: "chivalry", characterIndex: 6, characterName: "Actor3", attack: 4, defence: 2, move: 2, construct: 40, price: 320, obsolete: "automobile" },
+    { name: "caravan", label: "Caravan", requires: "trade", characterIndex: 4, characterName: "People4", attack: 0, defence: 1, move: 1, construct: 50, price: 450, ignoreAdjacent: true, tradeRoutes: true },
+    { name: "mech", label: "Mech. Infantry", requires: "unions", characterIndex: 0, characterName: "SF_Vehicle", attack: 6, defence: 6, move: 3, construct: 50, price: 450 },
+    { name: "artillery", label: "Artillery", requires: "robotics", characterIndex: 3, characterName: "SF_Vehicle", attack: 12, defence: 2, move: 2, construct: 60, price: 600, ignoreWalls: true },
+    { name: "armour", label: "Armour", requires: "automobile", characterIndex: 6, characterName: "SF_Vehicle", attack: 10, defence: 5, move: 3, construct: 80, price: 960 },
+    { name: "trireme", label: "Trireme", requires: "maps", characterIndex: 0, characterName: "Vehicle", attack: 1, defence: 0, move: 3, construct: 40, price: 320, cargo: 2 },
+    { name: "sail", label: "Sail", requires: "navigation", characterIndex: 7, characterName: "Vehicle", attack: 1, defence: 1, move: 3, construct: 40, price: 320, cargo: 3 },
+    { name: "frigate", label: "Frigate", requires: "magnetism", characterIndex: 1, characterName: "Vehicle", attack: 2, defence: 2, move: 3, construct: 40, price: 320, cargo: 4 },
+    { name: "transport", label: "Transport", requires: "industry", characterIndex: 7, characterName: "SF_Vehicle", attack: 0, defence: 3, move: 4, construct: 50, price: 450, cargo: 8 },
+    { name: "submarine", label: "Submarine", requires: "mass", characterIndex: 3, characterName: "Vehicle", attack: 8, defence: 2, move: 3, construct: 50, price: 450, sight: 2, cannotAttackLand: true, invisibleOnLand: true, onlyVisibleAdjacent: true },
+    { name: "ironclad", label: "Ironclad", requires: "steam", characterIndex: 7, characterName: "SF_Vehicle", attack: 4, defence: 4, move: 4, construct: 60, price: 600, obsolete: "combustion" },
+    { name: "cruiser", label: "Cruiser", requires: "combustion", characterIndex: 3, characterName: "Vehicle", attack: 6, defence: 6, move: 6, construct: 80, price: 960, sight: 2 },
+    { name: "carrier", label: "Carrier", requires: "advanced", characterIndex: 3, characterName: "Vehicle", attack: 1, defence: 12, move: 5, construct: 160, price: 3200, sight: 2, airCargo: 8 },
+    { name: "battleship", label: "Battleship", requires: "steel", characterIndex: 3, characterName: "Vehicle", attack: 18, defence: 12, move: 4, construct: 160, price: 3200, sight: 2 },
+    { name: "fighter", label: "Fighter", requires: "flight", characterIndex: 2, characterName: "SF_Vehicle", attack: 4, defence: 2, move: 10, construct: 60, price: 600 },
+    { name: "bomber", label: "Bomber", requires: "advanced", characterIndex: 2, characterName: "SF_Vehicle", attack: 12, defence: 1, move: 8, construct: 120, price: 1920, ignoreWalls: true, sight: 2, attackEndsTurn: true },
+    { name: "nuclear", label: "Nuclear", requires: "rocketry", characterIndex: 2, characterName: "SF_Vehicle", attack: 99, defence: 0, move: 16, construct: 160, price: 3200, invisibleUntilAttack: true, ignoreZoneControl: true, causeLandPollution: true, wonder: "manhattan" }
 ];
 
 (function() {
@@ -54,6 +54,12 @@ PDA.Unit.Units = [
     Game_Map.prototype.initialize = function() {
         PDA.Unit.Game_Map_initialize.call(this);
         this._units = [];
+        this._unitSprites = [];
+    };
+
+    PDA.Unit.Game_Map_civSprites = Game_Map.prototype.civSprites;
+    Game_Map.prototype.civSprites = function() {
+        return PDA.Unit.Game_Map_civSprites.call(this).concat(this._unitSprites);
     };
 
 //=============================================================================
@@ -82,8 +88,7 @@ PDA.Unit.Units = [
     Scene_Map.prototype.launchGame = function() {
         PDA.Unit.Scene_Map_launchGame.call(this);
 
-        const unit = $gameMap.addUnit("settler");
-        unit.locate($gamePlayer.x, $gamePlayer.y);
+        $gameMap.addUnit("settler", $gamePlayer.x, $gamePlayer.y);
     };
 
     PDA.Unit.Scene_Map_isMenuEnabled = Scene_Map.prototype.isMenuEnabled;
@@ -96,39 +101,54 @@ PDA.Unit.Units = [
         return PDA.Unit.Scene_Map_isPlayerActive.call(this) && !this._selectedUnit;
     };
 
-    PDA.Unit.Scene_Map_updateTurn = Scene_Map.prototype.updateTurn;
-    Scene_Map.prototype.updateTurn = function() {
-        PDA.Unit.Scene_Map_updateTurn.call(this);
-
-        $gameMap.units().forEach(unit => {
-            if (!unit.hasSprite()) {
-                this._spriteset.addUnit(unit);
-                unit.setHasSprite(true);
-            }
-
-            if (Input.isRepeated("ok") && !this._selectedUnit && $gamePlayer.x === unit.x && $gamePlayer.y === unit.y) {
-                this._selectedUnit = unit;
-                $gamePlayer.setTransparent(true);
-                unit.setStepAnime(true);
-            }
-
-            if (this._selectedUnit && this.isMenuCalled()) {
-                this.clearUnit();
-            }
-        });
+    PDA.Unit.Scene_Map_updateScene = Scene_Map.prototype.updateScene;
+    Scene_Map.prototype.updateScene = function() {
+        PDA.Unit.Scene_Map_updateScene.call(this);
 
         if (this._selectedUnit) {
             this._selectedUnit.update(true);
             if (this._selectedUnit.moved() && !this._selectedUnit.isMoving()) {
+                $gamePlayer.locate(this._selectedUnit.x, this._selectedUnit.y);
                 this.clearUnit();
             }
         }
+    };
 
-        if (this._endTurn) {
+    PDA.Unit.Scene_Map_endTurn = Scene_Map.prototype.endTurn;
+    Scene_Map.prototype.endTurn = function() {
+        PDA.Unit.Scene_Map_endTurn.call(this);
+
+        $gameMap.units().forEach(unit => {
+            unit.setMoved(false);
+        });
+    };
+
+    PDA.Unit.Scene_Map_processBack = Scene_Map.prototype.processBack;
+    Scene_Map.prototype.processBack = function() {
+        let consumed = PDA.Unit.Scene_Map_processBack.call(this);
+        if (!consumed && this._selectedUnit && !this._selectedUnit.isMoving()) {
+            this.clearUnit();
+            return true;
+        }
+
+        return consumed;
+    };
+
+    PDA.Unit.Scene_Map_processOk = Scene_Map.prototype.processOk;
+    Scene_Map.prototype.processOk = function(x, y) {
+        let consumed = PDA.Unit.Scene_Map_processOk.call(this, x, y);
+        if (!consumed) {
             $gameMap.units().forEach(unit => {
-                unit.setMoved(false);
+                if (x === unit.x && $gamePlayer.y === unit.y) {
+                    this._selectedUnit = unit;
+                    $gamePlayer.setTransparent(true);
+                    unit.setStepAnime(true);
+                    consumed = true;
+                }
             });
         }
+
+        return consumed;
     };
 
 //=============================================================================
@@ -153,18 +173,6 @@ PDA.Unit.Units = [
         }
     };
 
-//=============================================================================
-// Spriteset_Map
-//=============================================================================
-
-    PDA.Unit.Spriteset_Map_createCharacters = Spriteset_Map.prototype.createCharacters;
-    Spriteset_Map.prototype.createCharacters = function() {
-        PDA.Unit.Spriteset_Map_createCharacters.call(this);
-        $gameMap.units().forEach(unit => {
-            this.addUnit(unit);
-        });
-    };
-
 })(); // IIFE
 
 //=============================================================================
@@ -180,7 +188,6 @@ Game_CivUnit.prototype.constructor = Game_CivUnit;
 
 Game_CivUnit.prototype.initialize = function(name) {
     Game_CharacterBase.prototype.initialize.call(this);
-    this._hasSprite = false;
     this._name = name;
     this._moved = false;
     const unit = this.unit();
@@ -189,14 +196,6 @@ Game_CivUnit.prototype.initialize = function(name) {
 
 Game_CivUnit.prototype.unit = function() {
     return PDA.Unit.Units.find(unit => unit.name === this._name);
-};
-
-Game_CivUnit.prototype.hasSprite = function() {
-    return this._hasSprite;
-};
-
-Game_CivUnit.prototype.setHasSprite = function(hasSprite) {
-    this._hasSprite = hasSprite;
 };
 
 Game_CivUnit.prototype.getInputDirection = function() {
@@ -243,9 +242,12 @@ Game_CivUnit.prototype.update = function(sceneActive) {
 // Game_Map
 //=============================================================================
 
-Game_Map.prototype.addUnit = function(name) {
+Game_Map.prototype.addUnit = function(name, x, y) {
     const unit = new Game_CivUnit(name);
+    unit.locate(x, y);
     this._units.push(unit);
+    this._unitSprites.push(new Sprite_Character(unit));
+    this._refreshSpriteObjects = true;
     return unit;
 };
 
@@ -261,14 +263,4 @@ Scene_Map.prototype.clearUnit = function() {
     this._selectedUnit.setStepAnime(false);
     this._selectedUnit = null;
     $gamePlayer.setTransparent(false);
-};
-
-//=============================================================================
-// Spriteset_Map
-//=============================================================================
-
-Spriteset_Map.prototype.addUnit = function(unit) {
-    const sprite = new Sprite_Character(unit);
-    this._characterSprites.push(sprite);
-    this._tilemap.addChild(sprite);
 };

@@ -25,6 +25,7 @@ PDA.TurnCounter = PDA.TurnCounter || {};
         this._turnCount = 0;
         // 0 = Chieftain, 1 = Warlord, 2 = King, 3 = Prince, 4 = Emperor
         this._difficulty = 0;
+        this._refreshSpriteObjects = false;
     };
 
 //=============================================================================
@@ -40,7 +41,37 @@ PDA.TurnCounter = PDA.TurnCounter || {};
     PDA.TurnCounter.Scene_Map_updateScene = Scene_Map.prototype.updateScene;
     Scene_Map.prototype.updateScene = function() {
         PDA.TurnCounter.Scene_Map_updateScene.call(this);
-        this.updateTurn();
+
+        this._turnCountWindow.open();
+        if ($gamePlayer.screenX() > Graphics.boxWidth / 2) {
+            this._turnCountWindow.x = 0;
+        } else {
+            this._turnCountWindow.x = Graphics.boxWidth - this._turnCountWindow.width;
+        }
+
+        if (Input.isRepeated("ok") && this.isPlayerActive()) {
+            this.processOk($gamePlayer.x, $gamePlayer.y);
+        }
+
+        if (Input.isRepeated("cancel")) {
+            this.processBack();
+        }
+
+        if (Input.isTriggered("endTurn") && this.isPlayerActive()) {
+            this.endTurn();
+        }
+    };
+
+    PDA.TurnCounter.Spriteset_Map_initialize = Spriteset_Map.prototype.initialize;
+    Spriteset_Map.prototype.initialize = function() {
+        PDA.TurnCounter.Spriteset_Map_initialize.call(this);
+        this._civSprites = [];
+    };
+
+    PDA.TurnCounter.Spriteset_Map_update = Spriteset_Map.prototype.update;
+    Spriteset_Map.prototype.update = function() {
+        PDA.TurnCounter.Spriteset_Map_update.call(this);
+        this.updateCivSprites();
     };
 
 })(); // IIFE
@@ -58,8 +89,20 @@ Game_Map.prototype.difficulty = function() {
     return this._difficulty;
 };
 
+Game_Map.prototype.refreshSpriteObjects = function() {
+    return this._refreshSpriteObjects;
+};
+
+Game_Map.prototype.setRefreshSpriteObjects = function(refresh) {
+    this._refreshSpriteObjects = refresh;
+};
+
 Game_Map.prototype.setTurnCount = function(count) {
     this._turnCount = count;
+};
+
+Game_Map.prototype.civSprites = function() {
+    return [];
 };
 
 Game_Map.prototype.turnCount = function() {
@@ -75,32 +118,41 @@ Scene_Map.prototype.createTurnCountWindow = function() {
     this.addWindow(this._turnCountWindow);
 };
 
+Scene_Map.prototype.endTurn = function() {
+    $gameMap.setTurnCount($gameMap.turnCount() + 1);
+    const end = [650, 630, 610, 570, 570];
+    if ($gameMap.turnCount() === end[$gameMap.difficulty()]) {
+        SceneManager.goto(Scene_Gameover);
+    }
+};
+
+Scene_Map.prototype.processBack = function() {
+    return false;
+};
+
+Scene_Map.prototype.processOk = function(x, y) {
+    return false;
+};
+
 Scene_Map.prototype.turnCountWindowRect = function() {
     const wh = this.calcWindowHeight(1, false);
     const wy = Graphics.boxHeight - wh;
     return new Rectangle(0, wy, 128, wh);
 };
 
-Scene_Map.prototype.updateTurn = function() {
-    if (this._endTurn) {
-        this._endTurn = false;
-    }
+//=============================================================================
+// updateCivSprites
+//=============================================================================
 
-    this._turnCountWindow.open();
-    if ($gamePlayer.screenX() > Graphics.boxWidth / 2) {
-        this._turnCountWindow.x = 0;
-    } else {
-        this._turnCountWindow.x = Graphics.boxWidth - this._turnCountWindow.width;
-    }
-
-    if (Input.isTriggered("endTurn")) {
-        $gameMap.setTurnCount($gameMap.turnCount() + 1);
-        const end = [650, 630, 610, 570, 570];
-        if ($gameMap.turnCount() === end[$gameMap.difficulty()]) {
-            SceneManager.goto(Scene_Gameover);
-        }
-
-        this._endTurn = true;
+Spriteset_Map.prototype.updateCivSprites = function() {
+    if ($gameMap.refreshSpriteObjects()) {
+        $gameMap.civSprites().forEach(sprite => {
+            if (!this._civSprites.includes(sprite)) {
+                this._civSprites.push(sprite);
+                this._tilemap.addChild(sprite);
+            }
+        });
+        $gameMap.setRefreshSpriteObjects(false);
     }
 };
 

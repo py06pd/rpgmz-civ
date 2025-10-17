@@ -7,8 +7,6 @@
  * @plugindesc Learn technologies.
  * @author Peter Dawson
  *
- * Requires PDA_TurnCounter.js for difficulty() and turnCount()
- *
  * Science cost is calculated based on Lightbulb formula at
  * https://civfanatics.com/civ1/faq/section-d-tips-and-information/
  *
@@ -121,26 +119,27 @@ PDA.Technology.Technologies = [
         PDA.Technology.Scene_Map_createAllWindows.call(this);
     };
 
-    PDA.Technology.Scene_Map_updateTurn = Scene_Map.prototype.updateTurn;
-    Scene_Map.prototype.updateTurn = function() {
-        PDA.Technology.Scene_Map_updateTurn.call(this);
+    PDA.Technology.Scene_Map_updateScene = Scene_Map.prototype.updateScene;
+    Scene_Map.prototype.updateScene = function() {
+        PDA.Technology.Scene_Map_updateScene.call(this);
 
         this._learningTechnologyWindow.open();
+    };
 
-        if (this._endTurn) {
-            // Stand-in science yield until it can be got from cities
-            const scienceYield = 1;
-            let science = $gameMap.science() + scienceYield;
-            const tech = $gameMap.learningTechnology();
-            if (science >= $gameMap.scienceCost()) {
-                science = science - $gameMap.scienceCost();
-                $gameMap.addTechnology(tech.name);
+    PDA.Technology.Scene_Map_endTurn = Scene_Map.prototype.endTurn;
+    Scene_Map.prototype.endTurn = function() {
+        PDA.Technology.Scene_Map_endTurn.call(this);
 
-                $gameMap.setLearningTechnology($gameMap.canLearn()[0].name);
-            }
+        let science = $gameMap.science() + $gameMap.scienceYield();
+        const tech = $gameMap.learningTechnology();
+        if (science >= $gameMap.scienceCost()) {
+            science = science - $gameMap.scienceCost();
+            $gameMap.addTechnology(tech.name);
 
-            $gameMap.setScience(science);
+            $gameMap.setLearningTechnology($gameMap.canLearn()[0].name);
         }
+
+        $gameMap.setScience(science);
     };
 
 })(); // IIFE
@@ -160,6 +159,10 @@ Game_Map.prototype.canLearn = function() {
 };
 
 Game_Map.prototype.learnedTechnology = function(name) {
+    if (name === "") {
+        return true;
+    }
+
     return this._learnedTechnologies.includes(name);
 };
 
@@ -188,6 +191,10 @@ Game_Map.prototype.scienceCost = function() {
     const timeMod = this.turnCount() > 200 ? 2 : 1;
     return this._learnedTechnologies.length * mod[this.difficulty()] * timeMod;
 }
+
+Game_Map.prototype.scienceYield = function() {
+    return 0;
+};
 
 Game_Map.prototype.setScience = function(value) {
     this._technologyProgress[this._learningTechnology] = value;
