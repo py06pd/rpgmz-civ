@@ -32,6 +32,12 @@ PDA.TurnCounter = PDA.TurnCounter || {};
 // Scene_Map
 //=============================================================================
 
+    PDA.TurnCounter.Scene_Map_createSpriteset = Scene_Map.prototype.createSpriteset;
+    Scene_Map.prototype.createSpriteset = function() {
+        PDA.TurnCounter.Scene_Map_createSpriteset.call(this);
+        $gameMap.setRefreshSpriteObjects(true);
+    };
+
     PDA.TurnCounter.Scene_Map_createAllWindows = Scene_Map.prototype.createAllWindows;
     Scene_Map.prototype.createAllWindows = function() {
         this.createTurnCountWindow();
@@ -61,6 +67,10 @@ PDA.TurnCounter = PDA.TurnCounter || {};
             this.endTurn();
         }
     };
+
+//=============================================================================
+// Spriteset_Map
+//=============================================================================
 
     PDA.TurnCounter.Spriteset_Map_initialize = Spriteset_Map.prototype.initialize;
     Spriteset_Map.prototype.initialize = function() {
@@ -146,11 +156,14 @@ Scene_Map.prototype.turnCountWindowRect = function() {
 
 Spriteset_Map.prototype.updateCivSprites = function() {
     if ($gameMap.refreshSpriteObjects()) {
+        for (const sprite of this._civSprites) {
+            this._tilemap.removeChild(sprite);
+            sprite.destroy();
+        }
+        this._civSprites = [];
         $gameMap.civSprites().forEach(sprite => {
-            if (!this._civSprites.includes(sprite)) {
-                this._civSprites.push(sprite);
-                this._tilemap.addChild(sprite);
-            }
+            this._civSprites.push(sprite);
+            this._tilemap.addChild(sprite);
         });
         $gameMap.setRefreshSpriteObjects(false);
     }

@@ -54,12 +54,12 @@ PDA.Unit.Units = [
     Game_Map.prototype.initialize = function() {
         PDA.Unit.Game_Map_initialize.call(this);
         this._units = [];
-        this._unitSprites = [];
     };
 
     PDA.Unit.Game_Map_civSprites = Game_Map.prototype.civSprites;
     Game_Map.prototype.civSprites = function() {
-        return PDA.Unit.Game_Map_civSprites.call(this).concat(this._unitSprites);
+        return PDA.Unit.Game_Map_civSprites.call(this)
+            .concat(this._units.map(unit => new Sprite_Character(unit)));
     };
 
 //=============================================================================
@@ -246,7 +246,6 @@ Game_Map.prototype.addUnit = function(name, x, y) {
     const unit = new Game_CivUnit(name);
     unit.locate(x, y);
     this._units.push(unit);
-    this._unitSprites.push(new Sprite_Character(unit));
     this._refreshSpriteObjects = true;
     return unit;
 };
