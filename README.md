@@ -9,6 +9,7 @@ treating/testing them as discrete plugins.
 
 The order I have tested them in is:
  * PDA_GenerateMap
+ * PDA_Setup
  * PDA_TurnCounter
  * PDA_Technology
  * PDA_Unit
@@ -22,10 +23,12 @@ The order I have tested them in is:
    * Found cities
    * Simple movement
  * Simple city construction
+ * Game setup
 
 ## Todo
 
- * Game setup - difficulty, civilizations, tribe, map options
+ * Game setup
+   * Leader name
  * Learn technology
    * Select technology to learn
  * City management

@@ -23,8 +23,6 @@ PDA.TurnCounter = PDA.TurnCounter || {};
     Game_Map.prototype.initialize = function() {
         PDA.TurnCounter.Game_Map_initialize.call(this);
         this._turnCount = 0;
-        // 0 = Chieftain, 1 = Warlord, 2 = King, 3 = Prince, 4 = Emperor
-        this._difficulty = 0;
         this._refreshSpriteObjects = false;
     };
 
@@ -94,10 +92,6 @@ Input.keyMapper = {
 //=============================================================================
 // Game_Map
 //=============================================================================
-
-Game_Map.prototype.difficulty = function() {
-    return this._difficulty;
-};
 
 Game_Map.prototype.refreshSpriteObjects = function() {
     return this._refreshSpriteObjects;

@@ -16,18 +16,6 @@ PDA.Unit = PDA.Unit || {};
 PDA.Unit.vocabBuildCity = "Build City";
 PDA.Unit.vocabWait = "Wait";
 
-// City list from https://gamefaqs.gamespot.com/pc/564621-sid-meiers-civilization/faqs/1845. Names not updated to modern names.
-PDA.Unit.CityNames = {
-    roman: ["Rome", "Caesarea", "Carthage", "Nicopolis", "Byzantium", "Brundisium", "Syracuse", "Antioch", "Palmyra", "Cyrene", "Gordion", "Tyrus", "Jerusalem", "Seleucia", "Ravenna", "Artaxata"],
-    babylonian: ["Babylon", "Sumer", "Uruk", "Ninevah", "Ashur", "Ellipi", "Akkad", "Eridu", "Kish", "Nippur", "Shuruppak", "Zariqum", "Izibia", "Nimrud", "Arbela", "Zamua"],
-    german: ["Berlin", "Leipzig", "Hamburg", "Bremen", "Frankfurt", "Bonn", "Nuremburg", "Cologne", "Hannover", "Munich", "Stuttgart", "Heidelburg", "Salzburg", "Konigsberg", "Dortmond", "Brandenburg"],
-    egyptian: ["Themes", "Memphis", "Oryx", "Heliopolis", "Gaza", "Alexandria", "Byblos", "Cairo", "Coptos", "Edfu", "Pithom", "Busirus", "Athribus", "Mendes", "Tanis", "Abydos"],
-    american: ["Washington", "New York", "Boston", "Philedelphia", "Atlanta", "Chicago", "Buffalo", "St. Louis", "Detroit", "New Orleans", "Baltimore", "Denver", "Cincinnati", "Dallas", "Los Angeles", "Las Vegas"],
-    greek: ["Athens", "Sparta", "Corinth", "Delphi", "Eretria", "Pharsalos", "Argos", "Mycenae", "Herakleia", "Antioch", "Ephesos", "Rhodes", "Knossos", "Troy", "Pergamon", "Miletos"],
-    indian: ["Delhi", "Bombay", "Madras", "Bangalore", "Calcutta", "Lahore", "Karachi", "Kolhapur", "Jaipur", "Hyderbad", "Bengal", "Chittagong", "Punjab", "Dacca", "Indus", "Ganges"],
-    russian: ["Moscow", "Leningrad", "Kiev", "Minsk", "Smolensk", "Odessa", "Sevastopol", "Tblisi", "Sverdlovsk", "Yakutsk", "Vladivostok", "Novograd", "Krasnoyarsk", "Riga", "Rostov", "Astrakhan"],
-    zulu: ["Zimbabwe", "Ulundi", "Bapedi", "Hlobane", "Isandhlwana", "Intombe", "Mpondo", "Ngome", "Swazi", "Tugela", "Umtata", "Umfolozi", "Ibabanago", "Isipezi", "Amatikulu", "Zunquin"]
-};
 PDA.Unit.Units = [
     { name: "settler", label: "Settler", requires: "", characterIndex: 5, characterName: "Vehicle", attack: 0, defence: 1, move: 1, construct: 40, price: 320, buildRoads: true, buildMines: true, buildIrrigation: true, buildFortresses: true, cleanPollution: true, buildCity: true, populationCost: 1 },
     { name: "militia", label: "Militia", requires: "", characterIndex: 2, characterName: "People1", attack: 1, defence: 1, move: 1, construct: 10, price: 50, obsolete: "gunpowder" },
@@ -68,7 +56,6 @@ PDA.Unit.Units = [
     PDA.Unit.Game_Map_initialize = Game_Map.prototype.initialize;
     Game_Map.prototype.initialize = function() {
         PDA.Unit.Game_Map_initialize.call(this);
-        this._empire = "roman";
         this._units = [];
     };
 
@@ -91,6 +78,17 @@ PDA.Unit.Units = [
     };
 
 //=============================================================================
+// Scene_CivSetup
+//=============================================================================
+
+    PDA.Unit.Scene_CivSetup_setupGame = Scene_CivSetup.prototype.setupGame;
+    Scene_CivSetup.prototype.setupGame = function() {
+        PDA.Unit.Scene_CivSetup_setupGame.call(this);
+
+        $gameMap.addUnit("settler", $gamePlayer.x, $gamePlayer.y);
+    };
+
+//=============================================================================
 // Scene_Map
 //=============================================================================
 
@@ -104,13 +102,6 @@ PDA.Unit.Units = [
     Scene_Map.prototype.createAllWindows = function() {
         this.createUnitCommandWindow();
         PDA.Unit.Scene_Map_createAllWindows.call(this);
-    };
-
-    PDA.Unit.Scene_Map_launchGame = Scene_Map.prototype.launchGame;
-    Scene_Map.prototype.launchGame = function() {
-        PDA.Unit.Scene_Map_launchGame.call(this);
-
-        $gameMap.addUnit("settler", $gamePlayer.x, $gamePlayer.y);
     };
 
     PDA.Unit.Scene_Map_isMenuEnabled = Scene_Map.prototype.isMenuEnabled;
@@ -133,6 +124,11 @@ PDA.Unit.Units = [
                 $gamePlayer.locate(this._selectedUnit.x, this._selectedUnit.y);
                 this.clearUnit();
             }
+        }
+
+        if (!this._selectedUnit && Input.isRepeated("tab")) {
+            const unit = $gameMap.units()[0];
+            $gamePlayer.locate(unit.x, unit.y);
         }
     };
 
@@ -282,10 +278,6 @@ Game_Map.prototype.addUnit = function(name, x, y) {
     return unit;
 };
 
-Game_Map.prototype.empire = function() {
-    return this._empire;
-};
-
 Game_Map.prototype.removeUnit = function(unit) {
     this._units.splice(this._units.indexOf(unit), 1);
     this._refreshSpriteObjects = true;
@@ -325,8 +317,8 @@ Scene_Map.prototype.clearUnit = function() {
 
 Scene_Map.prototype.commandBuildCity = function() {
     $gameMap.removeUnit(this._selectedUnit);
-    if (PDA.CityBuilder) {
-        const next = PDA.Unit.CityNames[$gameMap.empire()]
+    if (PDA.Setup && PDA.CityBuilder) {
+        const next = $gameMap.empire().cityNames
             .find(name => !$gameMap.cities().some(city => city.name() === name));
         $gameMap.addCity(new Game_City(next, this._selectedUnit.x, this._selectedUnit.y));
     }

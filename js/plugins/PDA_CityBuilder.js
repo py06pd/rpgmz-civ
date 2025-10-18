@@ -80,8 +80,8 @@ PDA.CityBuilder.Buildings = [
 
     PDA.CityBuilder.Game_Map_scienceYield = Game_Map.prototype.scienceYield;
     Game_Map.prototype.scienceYield = function() {
-        PDA.CityBuilder.Game_Map_scienceYield.call(this);
-        return this._cities.map(city => city.scienceYield());
+        return PDA.CityBuilder.Game_Map_scienceYield.call(this) +
+            this._cities.reduce((sum, city) => sum + city.scienceYield(), 0);
     };
 
 //=============================================================================

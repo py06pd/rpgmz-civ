@@ -104,14 +104,18 @@ PDA.Technology.Technologies = [
     };
 
 //=============================================================================
-// Scene_Map
+// Scene_CivSetup
 //=============================================================================
 
-    PDA.Technology.Scene_Map_launchGame = Scene_Map.prototype.launchGame;
-    Scene_Map.prototype.launchGame = function() {
-        PDA.Technology.Scene_Map_launchGame.call(this);
+    PDA.Technology.Scene_CivSetup_setupGame = Scene_CivSetup.prototype.setupGame;
+    Scene_CivSetup.prototype.setupGame = function() {
+        PDA.Technology.Scene_CivSetup_setupGame.call(this);
         $gameMap.setLearningTechnology($gameMap.canLearn()[0].name);
     };
+
+//=============================================================================
+// Scene_Map
+//=============================================================================
 
     PDA.Technology.Scene_Map_createAllWindows = Scene_Map.prototype.createAllWindows;
     Scene_Map.prototype.createAllWindows = function() {

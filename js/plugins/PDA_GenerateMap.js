@@ -59,6 +59,31 @@ PDA.GenerateMap.jungleBaseTileId = 3776;
         return this._mapData[(z * this.height() + y) * this.width() + x] || 0;
     };
 
+    PDA.GenerateMap.Game_Map_height = Game_Map.prototype.height;
+    Game_Map.prototype.height = function() {
+        return $dataMap ? PDA.GenerateMap.Game_Map_height.call(this) : 50;
+    };
+
+    PDA.GenerateMap.Game_Map_isLoopHorizontal = Game_Map.prototype.isLoopHorizontal;
+    Game_Map.prototype.isLoopHorizontal = function() {
+        return $dataMap ? PDA.GenerateMap.Game_Map_isLoopHorizontal.call(this) : true;
+    };
+
+    PDA.GenerateMap.Game_Map_isLoopVertical = Game_Map.prototype.isLoopVertical;
+    Game_Map.prototype.isLoopVertical = function() {
+        return $dataMap ? PDA.GenerateMap.Game_Map_isLoopVertical.call(this) : false;
+    };
+
+    PDA.GenerateMap.Game_Map_encounterStep = Game_Map.prototype.encounterStep;
+    Game_Map.prototype.encounterStep = function() {
+        return $dataMap ? PDA.GenerateMap.Game_Map_encounterStep.call(this) : 0;
+    };
+
+    PDA.GenerateMap.Game_Map_width = Game_Map.prototype.width;
+    Game_Map.prototype.width = function() {
+        return $dataMap ? PDA.GenerateMap.Game_Map_width.call(this) : 80;
+    };
+
     //=============================================================================
     // Game_Player
     //=============================================================================
@@ -66,18 +91,6 @@ PDA.GenerateMap.jungleBaseTileId = 3776;
     PDA.GenerateMap.Game_Player_isMapPassable = Game_Player.prototype.isMapPassable;
     Game_Player.prototype.isMapPassable = function(x, y, z) {
         return true;
-    };
-
-//=============================================================================
-// Scene_Map
-//=============================================================================
-
-    PDA.GenerateMap.Scene_Map_start = Scene_Map.prototype.start;
-    Scene_Map.prototype.start = function() {
-        PDA.GenerateMap.Scene_Map_start.call(this);
-        if ($gameMap.data().length === 0) {
-            this.launchGame();
-        }
     };
 
 })(); // IIFE
@@ -90,7 +103,11 @@ Game_Map.prototype.geography = function() {
     return this._geography;
 };
 
-Game_Map.prototype.generateMap = function() {
+Game_Map.prototype.generateMap = function(landMass, temperature, climate, age) {
+    this._worldLandMass = landMass;
+    this._worldTemperature = temperature;
+    this._worldClimate = climate;
+    this._worldAge = age;
     let geography = this.generateLandMass(this._worldLandMass);
     geography = this.adjustTemperature(geography, this._worldTemperature);
     geography = this.adjustClimate(geography, this._worldClimate);
@@ -598,34 +615,4 @@ Game_Map.prototype.generatedTileId = function(tile, neighbours, z) {
     }
 
     return tileId;
-};
-
-//=============================================================================
-// Spriteset_Map
-//=============================================================================
-
-Spriteset_Map.prototype.refresh = function() {
-    this._tilemap.setData($gameMap.width(), $gameMap.height(), $gameMap.data());
-    this.loadTileset();
-};
-
-//=============================================================================
-// Scene_Map
-//=============================================================================
-
-Scene_Map.prototype.launchGame = function() {
-    $gameMap.generateMap();
-    this._spriteset.refresh();
-
-    const plains = [];
-    for (let y = 0; y < $gameMap.height(); y++) {
-        for (let x = 0; x < $gameMap.width(); x++) {
-            if ($gameMap.geography()[y][x] === "plains") {
-                plains.push({ x, y });
-            }
-        }
-    }
-
-    const start = plains[Math.randomInt(plains.length)];
-    $gamePlayer.locate(start.x, start.y);
 };
