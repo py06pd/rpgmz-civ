@@ -14,6 +14,13 @@
 
 var PDA = PDA || {};
 PDA.Setup = PDA.Setup || {};
+PDA.Setup.empireOptions = [[], [], [],
+    ["roman", "babylonian", "german", "russian", "zulu", "french"],
+    ["roman", "babylonian", "german", "egyptian", "russian", "zulu", "french", "aztec"],
+    ["roman", "babylonian", "german", "egyptian", "american", "russian", "zulu", "french", "aztec", "chinese"],
+    ["roman", "babylonian", "german", "egyptian", "american", "greek", "russian", "zulu", "french", "aztec", "chinese", "english"],
+    ["roman", "babylonian", "german", "egyptian", "american", "greek", "indian", "russian", "zulu", "french", "aztec", "chinese", "english", "mongol"]
+];
 PDA.Setup.vocab = {
     map: "Map Options",
     civ: "Game Options",
@@ -79,7 +86,7 @@ PDA.Setup.Empires = [
     {
         name: "egyptian",
         label: "Egyptian",
-        cityNames: ["Themes", "Memphis", "Oryx", "Heliopolis", "Gaza", "Alexandria", "Byblos", "Cairo", "Coptos", "Edfu", "Pithom", "Busirus", "Athribus", "Mendes", "Tanis", "Abydos"],
+        cityNames: ["Thebes", "Memphis", "Oryx", "Heliopolis", "Gaza", "Alexandria", "Byblos", "Cairo", "Coptos", "Edfu", "Pithom", "Busirus", "Athribus", "Mendes", "Tanis", "Abydos"],
     },
     {
         name: "american",
@@ -143,7 +150,7 @@ PDA.Setup.Empires = [
     Game_Map.prototype.initialize = function() {
         PDA.Setup.Game_Map_initialize.call(this);
         this._difficulty = 0;
-        this._empire = "roman";
+        this._empires = [];
     };
 
 //=============================================================================
@@ -153,11 +160,32 @@ PDA.Setup.Empires = [
     PDA.Setup.Scene_Title_commandNewGame = Scene_Title.prototype.commandNewGame;
     Scene_Title.prototype.commandNewGame = function() {
         DataManager.setupNewGame();
+        DataManager.loadMapData($dataSystem.startMapId);
         this._commandWindow.close();
         this.fadeOutAll();
         SceneManager.goto(Scene_CivSetup);
     };
 })(); // IIFE
+
+//=============================================================================
+// Game_Empire
+//=============================================================================
+
+function Game_Empire() {
+    this.initialize(...arguments);
+}
+
+Game_Empire.prototype.initialize = function(name) {
+    this._name = name;
+};
+
+Game_Empire.prototype.empire = function() {
+    return PDA.Setup.Empires.find(emp => emp.name === this._name);
+};
+
+Game_Empire.prototype.name = function() {
+    return this._name;
+};
 
 //=============================================================================
 // Game_Map
@@ -171,12 +199,33 @@ Game_Map.prototype.setDifficulty = function(difficulty) {
     this._difficulty = difficulty;
 };
 
+Game_Map.prototype.addEmpire = function(empire) {
+    this._empires.push(new Game_Empire(empire));
+};
+
 Game_Map.prototype.empire = function() {
-    return PDA.Setup.Empires.find(emp => emp.name === this._empire);
+    return this._empires[0];
+};
+
+Game_Map.prototype.empires = function() {
+    return this._empires;
 };
 
 Game_Map.prototype.setEmpire = function(empire) {
-    this._empire = empire;
+    this._empires.push(new Game_Empire(empire));
+};
+
+Game_Map.prototype.startingPositions = function() {
+    const plains = [];
+    for (let y = 0; y < $gameMap.height(); y++) {
+        for (let x = 0; x < $gameMap.width(); x++) {
+            if ($gameMap.geography()[y][x] === "plains") {
+                plains.push({ x, y });
+            }
+        }
+    }
+
+    return plains;
 };
 
 //=============================================================================
@@ -477,25 +526,28 @@ Scene_CivSetup.prototype.onEmpireCancel = function() {
 };
 
 Scene_CivSetup.prototype.setupGame = function() {
+    const empire = this._empireWindow.item();
     $gameMap.setDifficulty(this._difficultyWindow.index());
-    $gameMap.setEmpire(this._empireWindow.item());
+    $gameMap.setEmpire(empire);
     $gameMap.generateMap(
         this._landMassWindow.index(),
         this._temperatureWindow.index(),
         this._climateWindow.index(),
         this._ageWindow.index()
     );
-    const plains = [];
-    for (let y = 0; y < $gameMap.height(); y++) {
-        for (let x = 0; x < $gameMap.width(); x++) {
-            if ($gameMap.geography()[y][x] === "plains") {
-                plains.push({ x, y });
-            }
-        }
-    }
 
+    const plains = $gameMap.startingPositions();
     const start = plains[Math.randomInt(plains.length)];
     $gamePlayer.locate(start.x, start.y);
+    $gamePlayer.reserveTransfer($dataSystem.startMapId, start.x, start.y, 2, 0);
+
+    while ($gameMap.empires().length - 1 < this._competitionWindow.item()) {
+        const names = $gameMap.empires().map(emp => emp.name());
+        const options = PDA.Setup.empireOptions[this._competitionWindow.item()]
+            .filter(emp => emp !== empire && !names.includes(emp));
+        const index = Math.randomInt(options.length);
+        $gameMap.addEmpire(options[index]);
+    }
 };
 
 //=============================================================================
@@ -719,14 +771,7 @@ Window_SetupEmpire.prototype.itemAt = function(index) {
 };
 
 Window_SetupEmpire.prototype.setup = function(competition, maxHeight) {
-    const empires = [[], [], [],
-        ["roman", "babylonian", "german", "russian", "zulu", "french"],
-        ["roman", "babylonian", "german", "egyptian", "russian", "zulu", "french", "aztec"],
-        ["roman", "babylonian", "german", "egyptian", "american", "russian", "zulu", "french", "aztec", "chinese"],
-        ["roman", "babylonian", "german", "egyptian", "american", "greek", "russian", "zulu", "french", "aztec", "chinese", "english"],
-        ["roman", "babylonian", "german", "egyptian", "american", "greek", "indian", "russian", "zulu", "french", "aztec", "chinese", "english", "mongol"]
-    ];
-    this._data = empires[competition];
+    this._data = PDA.Setup.empireOptions[competition];
     if (this._index >= this._data.length) {
         this.forceSelect(0);
     }

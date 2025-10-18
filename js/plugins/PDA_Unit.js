@@ -53,16 +53,21 @@ PDA.Unit.Units = [
 // Game_Map
 //=============================================================================
 
-    PDA.Unit.Game_Map_initialize = Game_Map.prototype.initialize;
-    Game_Map.prototype.initialize = function() {
-        PDA.Unit.Game_Map_initialize.call(this);
-        this._units = [];
-    };
-
     PDA.Unit.Game_Map_civSprites = Game_Map.prototype.civSprites;
     Game_Map.prototype.civSprites = function() {
         return PDA.Unit.Game_Map_civSprites.call(this)
-            .concat(this._units.map(unit => new Sprite_Character(unit)));
+            .concat(this._empires.reduce((all, emp) => all.concat(emp.units()
+                .map(unit => new Sprite_Character(unit))), []));
+    };
+
+//=============================================================================
+// Game_Empire
+//=============================================================================
+
+    PDA.Unit.Game_Empire_initialize = Game_Empire.prototype.initialize;
+    Game_Empire.prototype.initialize = function(name) {
+        PDA.Unit.Game_Empire_initialize.call(this, name);
+        this._units = [];
     };
 
 //=============================================================================
@@ -85,7 +90,7 @@ PDA.Unit.Units = [
     Scene_CivSetup.prototype.setupGame = function() {
         PDA.Unit.Scene_CivSetup_setupGame.call(this);
 
-        $gameMap.addUnit("settler", $gamePlayer.x, $gamePlayer.y);
+        $gameMap.empire().addUnit("settler", $gamePlayer.x, $gamePlayer.y);
     };
 
 //=============================================================================
@@ -125,18 +130,13 @@ PDA.Unit.Units = [
                 this.clearUnit();
             }
         }
-
-        if (!this._selectedUnit && Input.isRepeated("tab")) {
-            const unit = $gameMap.units()[0];
-            $gamePlayer.locate(unit.x, unit.y);
-        }
     };
 
     PDA.Unit.Scene_Map_endTurn = Scene_Map.prototype.endTurn;
     Scene_Map.prototype.endTurn = function() {
         PDA.Unit.Scene_Map_endTurn.call(this);
 
-        $gameMap.units().forEach(unit => {
+        $gameMap.empire().units().forEach(unit => {
             unit.setMoved(false);
         });
     };
@@ -161,7 +161,7 @@ PDA.Unit.Units = [
                     this._unitCommandWindow.setup(this._selectedUnit);
                 }
             } else if (this.isPlayerActive()) {
-                $gameMap.units().forEach(unit => {
+                $gameMap.empire().units().forEach(unit => {
                     if (x === unit.x && $gamePlayer.y === unit.y) {
                         this._selectedUnit = unit;
                         $gamePlayer.setTransparent(true);
@@ -267,23 +267,23 @@ Game_CivUnit.prototype.update = function(sceneActive) {
 };
 
 //=============================================================================
-// Game_Map
+// Game_Empire
 //=============================================================================
 
-Game_Map.prototype.addUnit = function(name, x, y) {
+Game_Empire.prototype.addUnit = function(name, x, y) {
     const unit = new Game_CivUnit(name);
     unit.locate(x, y);
     this._units.push(unit);
-    this._refreshSpriteObjects = true;
+    $gameMap.setRefreshSpriteObjects(true);
     return unit;
 };
 
-Game_Map.prototype.removeUnit = function(unit) {
+Game_Empire.prototype.removeUnit = function(unit) {
     this._units.splice(this._units.indexOf(unit), 1);
-    this._refreshSpriteObjects = true;
+    $gameMap.setRefreshSpriteObjects(true);
 };
 
-Game_Map.prototype.units = function() {
+Game_Empire.prototype.units = function() {
     return this._units;
 };
 
@@ -316,11 +316,10 @@ Scene_Map.prototype.clearUnit = function() {
 };
 
 Scene_Map.prototype.commandBuildCity = function() {
-    $gameMap.removeUnit(this._selectedUnit);
+    $gameMap.empire().removeUnit(this._selectedUnit);
     if (PDA.Setup && PDA.CityBuilder) {
-        const next = $gameMap.empire().cityNames
-            .find(name => !$gameMap.cities().some(city => city.name() === name));
-        $gameMap.addCity(new Game_City(next, this._selectedUnit.x, this._selectedUnit.y));
+        const next = $gameMap.empire().nextCityName();
+        $gameMap.empire().addCity(new Game_City(next, this._selectedUnit.x, this._selectedUnit.y));
     }
     this.clearUnit();
     this._unitCommandWindow.close();

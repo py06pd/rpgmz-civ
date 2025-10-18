@@ -92,12 +92,12 @@ PDA.Technology.Technologies = [
 (function() {
 
 //=============================================================================
-// Game_Map
+// Game_Empire
 //=============================================================================
 
-    PDA.Technology.Game_Map_initialize = Game_Map.prototype.initialize;
-    Game_Map.prototype.initialize = function() {
-        PDA.Technology.Game_Map_initialize.call(this);
+    PDA.Technology.Game_Empire_initialize = Game_Empire.prototype.initialize;
+    Game_Empire.prototype.initialize = function(name) {
+        PDA.Technology.Game_Empire_initialize.call(this, name);
         this._learnedTechnologies = [];
         this._technologyProgress = {};
         this._learningTechnology = "";
@@ -110,7 +110,7 @@ PDA.Technology.Technologies = [
     PDA.Technology.Scene_CivSetup_setupGame = Scene_CivSetup.prototype.setupGame;
     Scene_CivSetup.prototype.setupGame = function() {
         PDA.Technology.Scene_CivSetup_setupGame.call(this);
-        $gameMap.setLearningTechnology($gameMap.canLearn()[0].name);
+        $gameMap.empire().setLearningTechnology($gameMap.empire().canLearn()[0].name);
     };
 
 //=============================================================================
@@ -133,36 +133,39 @@ PDA.Technology.Technologies = [
     PDA.Technology.Scene_Map_endTurn = Scene_Map.prototype.endTurn;
     Scene_Map.prototype.endTurn = function() {
         PDA.Technology.Scene_Map_endTurn.call(this);
-
-        let science = $gameMap.science() + $gameMap.scienceYield();
-        const tech = $gameMap.learningTechnology();
-        if (science >= $gameMap.scienceCost()) {
-            science = science - $gameMap.scienceCost();
-            $gameMap.addTechnology(tech.name);
-
-            $gameMap.setLearningTechnology($gameMap.canLearn()[0].name);
-        }
-
-        $gameMap.setScience(science);
+        $gameMap.empires().forEach(emp => emp.applyYield());
     };
 
 })(); // IIFE
 
 //=============================================================================
-// Game_Map
+// Game_Empire
 //=============================================================================
 
-Game_Map.prototype.addTechnology = function(name) {
+Game_Empire.prototype.addTechnology = function(name) {
     this._learnedTechnologies.push(name);
 };
 
-Game_Map.prototype.canLearn = function() {
-    return PDA.Technology.Technologies.filter(tech =>
-        !tech.requires.some(req => !$gameMap.learnedTechnology(req)) &&
-        !$gameMap.learnedTechnology(tech.name));
+Game_Empire.prototype.applyYield = function() {
+    let science = this.science() + this.scienceYield();
+    const tech = this.learningTechnology();
+    if (science >= this.scienceCost()) {
+        science = science - this.scienceCost();
+        this.addTechnology(tech.name);
+
+        this.setLearningTechnology(this.canLearn()[0].name);
+    }
+
+    this.setScience(science);
 };
 
-Game_Map.prototype.learnedTechnology = function(name) {
+Game_Empire.prototype.canLearn = function() {
+    return PDA.Technology.Technologies.filter(tech =>
+        !tech.requires.some(req => !this.learnedTechnology(req)) &&
+        !this.learnedTechnology(tech.name));
+};
+
+Game_Empire.prototype.learnedTechnology = function(name) {
     if (name === "") {
         return true;
     }
@@ -170,37 +173,37 @@ Game_Map.prototype.learnedTechnology = function(name) {
     return this._learnedTechnologies.includes(name);
 };
 
-Game_Map.prototype.learningTechnology = function() {
+Game_Empire.prototype.learningTechnology = function() {
     return PDA.Technology.Technologies.find(tech => tech.name === this._learningTechnology);
 };
 
-Game_Map.prototype.setLearningTechnology = function(name) {
+Game_Empire.prototype.setLearningTechnology = function(name) {
     this._learningTechnology = name;
 };
 
-Game_Map.prototype.science = function() {
+Game_Empire.prototype.science = function() {
     return this.scienceProgress(this._learningTechnology);
 };
 
-Game_Map.prototype.scienceProgress = function(name) {
+Game_Empire.prototype.scienceProgress = function(name) {
     return this._technologyProgress[name] ?? 0;
 };
 
-Game_Map.prototype.scienceCost = function() {
+Game_Empire.prototype.scienceCost = function() {
     if (this._learnedTechnologies.length === 0) {
         return 10;
     }
 
     const mod = [6, 8, 10, 12, 14];
-    const timeMod = this.turnCount() > 200 ? 2 : 1;
-    return this._learnedTechnologies.length * mod[this.difficulty()] * timeMod;
+    const timeMod = $gameMap.turnCount() > 200 ? 2 : 1;
+    return this._learnedTechnologies.length * mod[$gameMap.difficulty()] * timeMod;
 }
 
-Game_Map.prototype.scienceYield = function() {
+Game_Empire.prototype.scienceYield = function() {
     return 0;
 };
 
-Game_Map.prototype.setScience = function(value) {
+Game_Empire.prototype.setScience = function(value) {
     this._technologyProgress[this._learningTechnology] = value;
 };
 
@@ -252,13 +255,13 @@ Window_LearningTechnology.prototype.refresh = function() {
     this.contents.clear();
     this.resetFontSettings();
     this.contents.fontSize -= 6;
-    const tech = $gameMap.learningTechnology();
+    const tech = $gameMap.empire().learningTechnology();
     if (tech) {
         this.drawText(tech.label, rect.x, rect.y, rect.width);
 
         rect = this.itemLineRect(1);
 
-        const progress = $gameMap.science() + "/" + $gameMap.scienceCost();
+        const progress = $gameMap.empire().science() + "/" + $gameMap.empire().scienceCost();
         this.drawText(progress, rect.x, rect.y, rect.width);
     }
 };

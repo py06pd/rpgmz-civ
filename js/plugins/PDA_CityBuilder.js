@@ -66,22 +66,47 @@ PDA.CityBuilder.Buildings = [
 // Game_Map
 //=============================================================================
 
-    PDA.CityBuilder.Game_Map_initialize = Game_Map.prototype.initialize;
-    Game_Map.prototype.initialize = function() {
-        PDA.CityBuilder.Game_Map_initialize.call(this);
-        this._cities = [];
-    };
-
     PDA.CityBuilder.Game_Map_civSprites = Game_Map.prototype.civSprites;
     Game_Map.prototype.civSprites = function() {
         return PDA.CityBuilder.Game_Map_civSprites.call(this)
-            .concat(this._cities.map(city => new Sprite_City(city.x, city.y)));
+            .concat(this._empires.reduce((all, emp) => all.concat(emp.cities()
+                .map(city => new Sprite_City(city.x, city.y))), []));
     };
 
-    PDA.CityBuilder.Game_Map_scienceYield = Game_Map.prototype.scienceYield;
-    Game_Map.prototype.scienceYield = function() {
-        return PDA.CityBuilder.Game_Map_scienceYield.call(this) +
+//=============================================================================
+// Game_Empire
+//=============================================================================
+
+    PDA.CityBuilder.Game_Empire_initialize = Game_Empire.prototype.initialize;
+    Game_Empire.prototype.initialize = function(name) {
+        PDA.CityBuilder.Game_Empire_initialize.call(this, name);
+        this._cities = [];
+    };
+
+    PDA.CityBuilder.Game_Empire_scienceYield = Game_Empire.prototype.scienceYield;
+    Game_Empire.prototype.scienceYield = function() {
+        return PDA.CityBuilder.Game_Empire_scienceYield.call(this) +
             this._cities.reduce((sum, city) => sum + city.scienceYield(), 0);
+    };
+
+//=============================================================================
+// Scene_CivSetup
+//=============================================================================
+
+    PDA.CityBuilder.Scene_CivSetup_setupGame = Scene_CivSetup.prototype.setupGame;
+    Scene_CivSetup.prototype.setupGame = function() {
+        PDA.CityBuilder.Scene_CivSetup_setupGame.call(this);
+
+        // Add city for all non-player empires
+        const plains = $gameMap.startingPositions();
+        const used = $gameMap.empire().cities().map(city => ({ x: city.x, y: city.y }));
+        $gameMap.empires().forEach(emp => {
+            const start = plains[Math.randomInt(plains.length)];
+            if (!used.includes(start)) {
+                emp.addCity(new Game_City(emp.nextCityName(), start.x, start.y));
+                used.push(start);
+            }
+        });
     };
 
 //=============================================================================
@@ -92,7 +117,7 @@ PDA.CityBuilder.Buildings = [
     Scene_Map.prototype.processOk = function(x, y) {
         let consumed = PDA.CityBuilder.Scene_Map_processOk.call(this, x, y);
         if (!consumed && this.isPlayerActive()) {
-            $gameMap.cities().forEach((city, index) => {
+            $gameMap.empire().cities().forEach((city, index) => {
                 if (x === city.x && y === city.y) {
                     $gameTemp.setLastTargetActorId(index);
                     SceneManager.push(Scene_City);
@@ -106,17 +131,25 @@ PDA.CityBuilder.Buildings = [
     PDA.CityBuilder.Scene_Map_endTurn = Scene_Map.prototype.endTurn;
     Scene_Map.prototype.endTurn = function() {
         PDA.CityBuilder.Scene_Map_endTurn.call(this);
-        $gameMap.cities().forEach(city => {
-            const obj = city.buildObject();
-            if (obj) {
-                const next = city.buildProgress() + city.productionYield();
-                if (next >= obj.construct) {
-                    city.addBuilding(obj.name);
-                    city.setBuild(null);
-                } else {
-                    city.setBuildProgress(next);
+        $gameMap.empires().forEach(emp => {
+            emp.cities().forEach(city => {
+                const obj = city.buildObject();
+                if (obj) {
+                    const next = city.buildProgress() + city.productionYield();
+                    if (next >= obj.construct) {
+                        if (city.buildType() === "unit") {
+                            if (PDA.Unit) {
+                                emp.addUnit(obj.name, city.x, city.y);
+                            }
+                        } else {
+                            city.addBuilding(obj.name);
+                        }
+                        city.setBuild(null);
+                    } else {
+                        city.setBuildProgress(next);
+                    }
                 }
-            }
+            });
         });
     };
 })(); // IIFE
@@ -158,9 +191,9 @@ Game_City.prototype.addBuilding = function(name) {
 
 Game_City.prototype.buildable = function() {
     const buildings = PDA.CityBuilder.Buildings.filter(build =>
-        (!PDA.Technology || $gameMap.learnedTechnology(build.requires)) &&
+        (!PDA.Technology || $gameMap.empire().learnedTechnology(build.requires)) &&
         !this.hasBuilt(build.name) &&
-        (!build.wonder || !$gameMap.cities().some(city => city.hasBuilt(build.name))))
+        (!build.wonder || !$gameMap.empires().some(emp => emp.hasBuilt(build.name))))
         .sort((a, b) => a.construct === b.construct ?
             (a.label > b.label ? 1 : -1) : (a.construct > b.construct ? 1 : -1));
 
@@ -172,7 +205,7 @@ Game_City.prototype.buildable = function() {
 Game_City.prototype.buildableUnits = function() {
     if (PDA.Unit) {
         return PDA.Unit.Units.filter(unit =>
-            (!PDA.Technology || $gameMap.learnedTechnology(unit.requires)))
+            (!PDA.Technology || $gameMap.empire().learnedTechnology(unit.requires)))
             .sort((a, b) => a.construct === b.construct ?
                 (a.label > b.label ? 1 : -1) : (a.construct > b.construct ? 1 : -1));
     }
@@ -194,6 +227,10 @@ Game_City.prototype.buildObject = function() {
 
 Game_City.prototype.buildProgress = function() {
     return this._build ? this._build.value : 0;
+};
+
+Game_City.prototype.buildType = function() {
+    return this._build ? this._build.type : "";
 };
 
 Game_City.prototype.hasBuilt = function(name) {
@@ -223,16 +260,28 @@ Game_City.prototype.setBuildProgress = function(value) {
 };
 
 //=============================================================================
-// Game_Map
+// Game_Empire
 //=============================================================================
 
-Game_Map.prototype.addCity = function(city) {
+Game_Empire.prototype.addCity = function(city) {
    this._cities.push(city);
-   this._refreshSpriteObjects = true;
+   $gameMap.setRefreshSpriteObjects(true);
 };
 
-Game_Map.prototype.cities = function() {
+Game_Empire.prototype.cities = function() {
     return this._cities;
+};
+
+Game_Empire.prototype.hasBuilt = function(name) {
+    return this._cities.some(city => city.hasBuilt(name));
+};
+
+Game_Empire.prototype.hasCity = function(name) {
+    return this._cities.some(city => city.name() === name);
+};
+
+Game_Empire.prototype.nextCityName = function() {
+    return this.empire().cityNames.find(name => !$gameMap.empires().some(emp => emp.hasCity(name)));
 };
 
 //=============================================================================
@@ -361,11 +410,11 @@ Scene_City.prototype.buildWindowRect = function() {
 };
 
 Scene_City.prototype.needsPageButtons = function() {
-    return $gameMap.cities().length > 1;
+    return $gameMap.empire().cities().length > 1;
 };
 
 Scene_City.prototype.refreshActor = function() {
-    const city = $gameMap.cities()[this._index];
+    const city = $gameMap.empire().cities()[this._index];
     this._nameWindow.setText(city.name());
     this._yieldWindow.setCity(city);
     this._bfcWindow.setCity(city);
@@ -380,7 +429,7 @@ Scene_City.prototype.commandBuild = function() {
 
 Scene_City.prototype.onBuildOk = function() {
     const build = this._buildingsWindow.item();
-    $gameMap.cities()[this._index].setBuild({ type: build.characterIndex ? 'unit' : 'building', name: build.name, value: 0 })
+    $gameMap.empire().cities()[this._index].setBuild({ type: build.characterIndex ? 'unit' : 'building', name: build.name, value: 0 })
     this._buildWindow.refresh();
     this._buildingsWindow.activate();
 };
@@ -399,12 +448,12 @@ Scene_City.prototype.onActorChange = function() {
 };
 
 Scene_City.prototype.nextActor = function() {
-    this._index = this._index + 1 === $gameMap.cities().length ? 0 : this._index + 1;
+    this._index = this._index + 1 === $gameMap.empire().cities().length ? 0 : this._index + 1;
     this.onActorChange();
 };
 
 Scene_City.prototype.previousActor = function() {
-    this._index = this._index === 0 ? $gameMap.cities().length - 1 : this._index - 1;
+    this._index = this._index === 0 ? $gameMap.empire().cities().length - 1 : this._index - 1;
     this.onActorChange();
 };
 
