@@ -55,7 +55,7 @@ PDA.TurnCounter = PDA.TurnCounter || {};
             this._turnCountWindow.x = Graphics.boxWidth - this._turnCountWindow.width;
         }
 
-        if (Input.isRepeated("ok") && this.isPlayerActive()) {
+        if (Input.isRepeated("ok")) {
             this.processOk($gamePlayer.x, $gamePlayer.y);
         }
 

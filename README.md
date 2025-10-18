@@ -18,7 +18,9 @@ The order I have tested them in is:
 
  * Map generation
  * Simple technology learning
- * Simple unit movement
+ * Units
+   * Found cities
+   * Simple movement
  * Simple city construction
 
 ## Todo
@@ -47,9 +49,16 @@ The order I have tested them in is:
    * Earth
  * Units
    * Found cities
+     * Enter name
+     * Check tile type / proximity of other cities
    * Battles
    * Obsolescence
    * Work tiles
+ * Victories
+   * Space Race
+   * Conquest
+   * Time
+   * Hall of Fame
  * Barbarians
  * Other civs AI
  * Move variables / data to plugin inputs

@@ -88,23 +88,19 @@ PDA.CityBuilder.Buildings = [
 // Scene_Map
 //=============================================================================
 
-    PDA.CityBuilder.Scene_Map_launchGame = Scene_Map.prototype.launchGame;
-    Scene_Map.prototype.launchGame = function() {
-        PDA.CityBuilder.Scene_Map_launchGame.call(this);
-
-        $gameMap.addCity(new Game_City("Test", $gamePlayer.x, $gamePlayer.y - 1));
-    };
-
     PDA.CityBuilder.Scene_Map_processOk = Scene_Map.prototype.processOk;
     Scene_Map.prototype.processOk = function(x, y) {
-        PDA.CityBuilder.Scene_Map_processOk.call(this, x, y);
+        let consumed = PDA.CityBuilder.Scene_Map_processOk.call(this, x, y);
+        if (!consumed && this.isPlayerActive()) {
+            $gameMap.cities().forEach((city, index) => {
+                if (x === city.x && y === city.y) {
+                    $gameTemp.setLastTargetActorId(index);
+                    SceneManager.push(Scene_City);
+                }
+            });
+        }
 
-        $gameMap.cities().forEach((city, index) => {
-            if (x === city.x && y === city.y) {
-                $gameTemp.setLastTargetActorId(index);
-                SceneManager.push(Scene_City);
-            }
-        });
+        return consumed;
     };
 
     PDA.CityBuilder.Scene_Map_endTurn = Scene_Map.prototype.endTurn;
