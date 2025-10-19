@@ -7,6 +7,8 @@
  * @plugindesc Units.
  * @author Peter Dawson
  *
+ * Civ1 combat mechanics based on logic at https://forums.civfanatics.com/threads/civ1-combat-mechanics-explained.492843/
+ *
  * @help PDA_Unit.js
  */
 
@@ -33,18 +35,18 @@ PDA.Unit.Units = [
     { name: "mech", label: "Mech. Infantry", requires: "unions", characterIndex: 0, characterName: "SF_Vehicle", attack: 6, defence: 6, move: 3, construct: 50, price: 450 },
     { name: "artillery", label: "Artillery", requires: "robotics", characterIndex: 3, characterName: "SF_Vehicle", attack: 12, defence: 2, move: 2, construct: 60, price: 600, ignoreWalls: true },
     { name: "armour", label: "Armour", requires: "automobile", characterIndex: 6, characterName: "SF_Vehicle", attack: 10, defence: 5, move: 3, construct: 80, price: 960 },
-    { name: "trireme", label: "Trireme", requires: "maps", characterIndex: 0, characterName: "Vehicle", attack: 1, defence: 0, move: 3, construct: 40, price: 320, cargo: 2 },
-    { name: "sail", label: "Sail", requires: "navigation", characterIndex: 7, characterName: "Vehicle", attack: 1, defence: 1, move: 3, construct: 40, price: 320, cargo: 3 },
-    { name: "frigate", label: "Frigate", requires: "magnetism", characterIndex: 1, characterName: "Vehicle", attack: 2, defence: 2, move: 3, construct: 40, price: 320, cargo: 4 },
-    { name: "transport", label: "Transport", requires: "industry", characterIndex: 7, characterName: "SF_Vehicle", attack: 0, defence: 3, move: 4, construct: 50, price: 450, cargo: 8 },
-    { name: "submarine", label: "Submarine", requires: "mass", characterIndex: 3, characterName: "Vehicle", attack: 8, defence: 2, move: 3, construct: 50, price: 450, sight: 2, cannotAttackLand: true, invisibleOnLand: true, onlyVisibleAdjacent: true },
-    { name: "ironclad", label: "Ironclad", requires: "steam", characterIndex: 7, characterName: "SF_Vehicle", attack: 4, defence: 4, move: 4, construct: 60, price: 600, obsolete: "combustion" },
-    { name: "cruiser", label: "Cruiser", requires: "combustion", characterIndex: 3, characterName: "Vehicle", attack: 6, defence: 6, move: 6, construct: 80, price: 960, sight: 2 },
-    { name: "carrier", label: "Carrier", requires: "advanced", characterIndex: 3, characterName: "Vehicle", attack: 1, defence: 12, move: 5, construct: 160, price: 3200, sight: 2, airCargo: 8 },
-    { name: "battleship", label: "Battleship", requires: "steel", characterIndex: 3, characterName: "Vehicle", attack: 18, defence: 12, move: 4, construct: 160, price: 3200, sight: 2 },
-    { name: "fighter", label: "Fighter", requires: "flight", characterIndex: 2, characterName: "SF_Vehicle", attack: 4, defence: 2, move: 10, construct: 60, price: 600 },
-    { name: "bomber", label: "Bomber", requires: "advanced", characterIndex: 2, characterName: "SF_Vehicle", attack: 12, defence: 1, move: 8, construct: 120, price: 1920, ignoreWalls: true, sight: 2, attackEndsTurn: true },
-    { name: "nuclear", label: "Nuclear", requires: "rocketry", characterIndex: 2, characterName: "SF_Vehicle", attack: 99, defence: 0, move: 16, construct: 160, price: 3200, invisibleUntilAttack: true, ignoreZoneControl: true, causeLandPollution: true, wonder: "manhattan" }
+    { name: "trireme", label: "Trireme", requires: "maps", characterIndex: 0, characterName: "Vehicle", attack: 1, defence: 0, move: 3, construct: 40, price: 320, sea: true, cargo: 2 },
+    { name: "sail", label: "Sail", requires: "navigation", characterIndex: 7, characterName: "Vehicle", attack: 1, defence: 1, move: 3, construct: 40, price: 320, sea: true, cargo: 3 },
+    { name: "frigate", label: "Frigate", requires: "magnetism", characterIndex: 1, characterName: "Vehicle", attack: 2, defence: 2, move: 3, construct: 40, price: 320, sea: true, cargo: 4 },
+    { name: "transport", label: "Transport", requires: "industry", characterIndex: 7, characterName: "SF_Vehicle", attack: 0, defence: 3, move: 4, construct: 50, price: 450, sea: true, cargo: 8 },
+    { name: "submarine", label: "Submarine", requires: "mass", characterIndex: 3, characterName: "Vehicle", attack: 8, defence: 2, move: 3, construct: 50, price: 450, sea: true, sight: 2, cannotAttackLand: true, invisibleOnLand: true, onlyVisibleAdjacent: true },
+    { name: "ironclad", label: "Ironclad", requires: "steam", characterIndex: 7, characterName: "SF_Vehicle", attack: 4, defence: 4, move: 4, construct: 60, price: 600, sea: true, obsolete: "combustion" },
+    { name: "cruiser", label: "Cruiser", requires: "combustion", characterIndex: 3, characterName: "Vehicle", attack: 6, defence: 6, move: 6, construct: 80, price: 960, sea: true, sight: 2 },
+    { name: "carrier", label: "Carrier", requires: "advanced", characterIndex: 3, characterName: "Vehicle", attack: 1, defence: 12, move: 5, construct: 160, price: 3200, sea: true, sight: 2, airCargo: 8 },
+    { name: "battleship", label: "Battleship", requires: "steel", characterIndex: 3, characterName: "Vehicle", attack: 18, defence: 12, move: 4, construct: 160, price: 3200, sea: true, sight: 2 },
+    { name: "fighter", label: "Fighter", requires: "flight", characterIndex: 2, characterName: "SF_Vehicle", attack: 4, defence: 2, move: 10, construct: 60, price: 600, air: true },
+    { name: "bomber", label: "Bomber", requires: "advanced", characterIndex: 2, characterName: "SF_Vehicle", attack: 12, defence: 1, move: 8, construct: 120, price: 1920, air: true, ignoreWalls: true, sight: 2, attackEndsTurn: true },
+    { name: "nuclear", label: "Nuclear", requires: "rocketry", characterIndex: 2, characterName: "SF_Vehicle", attack: 99, defence: 0, move: 16, construct: 160, price: 3200, air: true, invisibleUntilAttack: true, ignoreZoneControl: true, causeLandPollution: true, wonder: "manhattan" }
 ];
 
 (function() {
@@ -126,6 +128,15 @@ PDA.Unit.Units = [
         if (this._selectedUnit && !this._unitCommandWindow.active) {
             this._selectedUnit.update(true);
             if (this._selectedUnit.moved() && !this._selectedUnit.isMoving()) {
+                $gameMap.empires().forEach((emp, index) => {
+                    if (index > 0) {
+                        emp.units().forEach(unit => {
+                            if (unit.x === this._selectedUnit.x && unit.y === this._selectedUnit.y) {
+                                this.performAttack(this._selectedUnit, unit);
+                            }
+                        });
+                    }
+                });
                 $gamePlayer.locate(this._selectedUnit.x, this._selectedUnit.y);
                 this.clearUnit();
             }
@@ -221,16 +232,103 @@ function Game_CivUnit() {
 Game_CivUnit.prototype = Object.create(Game_Character.prototype);
 Game_CivUnit.prototype.constructor = Game_CivUnit;
 
-Game_CivUnit.prototype.initialize = function(name) {
+Game_CivUnit.prototype.initialize = function(name, empire) {
     Game_CharacterBase.prototype.initialize.call(this);
     this._name = name;
+    this._empire = empire;
+    this._fortified = false;
     this._moved = false;
+    this._veteran = 0;
     const unit = this.unit();
+    this._movePoints = unit.move;
     this.setImage(unit.characterName, unit.characterIndex);
+};
+
+Game_CivUnit.prototype.attack = function(target) {
+    let value = this.unit().attack * 8;
+    const attackOnPlayer = target.empire().name() === $gameMap.empire().name();
+    if (this._empire === "barbarian") {
+        if (attackOnPlayer) {
+            value = value * ($gameMap.difficulty() + 1) / 4;
+        } else {
+            value = value / 2;
+        }
+
+        if (PDA.CityBuilder && target.city()) {
+            if (target.empire().cities().length === 1) {
+                value = 0;
+            }
+
+            if (target.city().hasBuilt("palace")) {
+                value = value / 2;
+            }
+        }
+    }
+
+    if (this._veteran) {
+        value = value * 1.5;
+    }
+
+    if (this._movePoints <= 0.2) {
+        value = value * (this._movePoints * 10) / 3;
+    }
+
+    if (this._empire === "barbarian" && attackOnPlayer && $gameMap.difficulty() < 2) {
+        value = value / 2;
+    }
+
+    if (this._empire === $gameMap.empire().name() && $gameMap.difficulty() === 0) {
+        value = value * 2;
+    }
+
+    return value;
 };
 
 Game_CivUnit.prototype.canBuildCity = function() {
     return this.unit().buildCity;
+};
+
+Game_CivUnit.prototype.defence = function(attacker) {
+    const tile = $gameMap.geography(this.x, this.y);
+    const unit = this.unit();
+    let value = unit.defence;
+    if (!unit.sea && !unit.air) {
+        value = value * tile.defence();
+    }
+
+    if (
+        PDA.CityBuilder && !attacker.unit().ignoreWalls && !unit.air && this.city() &&
+        this.city().hasBuilt("walls")
+    ) {
+        value = value * 12;
+    } else {
+        if (unit.sea || unit.air) {
+            value = value * 8;
+        } else {
+            if (tile.fortress()) {
+                value = value * 8;
+            } else if (this._fortified) {
+                value = value * 6;
+            } else {
+                value = value * 4;
+            }
+        }
+    }
+
+    if (this._veteran) {
+        value = value * 1.5;
+    }
+
+    return value;
+};
+
+Game_CivUnit.prototype.city = function() {
+    const empire = this.empire();
+    return empire ? empire.city(this.x, this.y) : null;
+};
+
+Game_CivUnit.prototype.empire = function() {
+    return $gameMap.empires().find(emp => emp.name() === this._empire);
 };
 
 Game_CivUnit.prototype.unit = function() {
@@ -277,12 +375,20 @@ Game_CivUnit.prototype.update = function(sceneActive) {
     }
 };
 
+Game_CivUnit.prototype.veteran = function() {
+    return this._veteran;
+};
+
+Game_CivUnit.prototype.setVeteran = function(value) {
+    this._veteran = value;
+};
+
 //=============================================================================
 // Game_Empire
 //=============================================================================
 
 Game_Empire.prototype.addUnit = function(name, x, y) {
-    const unit = new Game_CivUnit(name);
+    const unit = new Game_CivUnit(name, this._name);
     unit.locate(x, y);
     this._units.push(unit);
     $gameMap.setRefreshSpriteObjects(true);
@@ -339,6 +445,26 @@ Scene_Map.prototype.commandBuildCity = function() {
 Scene_Map.prototype.commandWait = function() {
     this.clearUnit();
     this._unitCommandWindow.close();
+};
+
+Scene_Map.prototype.performAttack = function(attacker, defender) {
+    let chances = attacker.empire().name() === "barbarian" && defender.city() ? 2 : 1;
+    const attack1 = Math.randomInt(attacker.attack(defender));
+    const defence1 = Math.randomInt(defender.defence(attacker));
+    const attack2 = Math.randomInt(attacker.attack(defender));
+    const defence2 = Math.randomInt(defender.defence(attacker));
+    let victor;
+    if (defence1 >= attack1 || (chances > 1 && defence2 > attack2)) {
+        attacker.empire().removeUnit(attacker);
+        victor = defender;
+    } else {
+        defender.empire().removeUnit(defender);
+        victor = attacker;
+    }
+
+    if (!victor.veteran() && Math.randomInt(2) === 1) {
+        victor.setVeteran(true);
+    }
 };
 
 //=============================================================================

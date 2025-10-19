@@ -279,6 +279,10 @@ Game_Empire.prototype.addCity = function(city) {
    $gameMap.setRefreshSpriteObjects(true);
 };
 
+Game_Empire.prototype.city = function(x, y) {
+    return this._cities.find(city => city.x === x && city.y === y);
+};
+
 Game_Empire.prototype.cities = function() {
     return this._cities;
 };
@@ -726,7 +730,7 @@ Window_CityBuild.prototype.refresh = function() {
 
 Window_TileInfo.prototype.drawCityInfo = function(x, y, width) {
     $gameMap.empires().forEach(emp => {
-        const found = emp.cities().find(city => city.x === this._x && city.y === this._y);
+        const found = emp.city(this._x, this._y);
         if (found) {
             const label = found.name() + " (" + emp.empire().label + ")";
             this.drawText(label, x, y, width);

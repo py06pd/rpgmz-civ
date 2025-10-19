@@ -68,6 +68,21 @@ PDA.GenerateMap.resources = {
     swamp: "oil",
     tundra: "game2"
 };
+PDA.GenerateMap.tiles = {
+    arctic: { defence: 2, food: 0, moveCost: 2, production: 0, resource: "seal", trade: 0, resourceFood: 2, resourceProduction: 0, resourceTrade: 0 },
+    desert: { defence: 2, food: 0, moveCost: 1, production: 1, resource: "oasis", trade: 0, resourceFood: 3, resourceProduction: 0, resourceTrade: 0 },
+    forest: { defence: 3, food: 1, moveCost: 2, production: 2, resource: "game1", trade: 0, resourceFood: 2, resourceProduction: 0, resourceTrade: 0 },
+    grassland: { defence: 2, food: 2, moveCost: 1, production: 0, resource: "shield", trade: 0, resourceFood: 0, resourceProduction: 1, resourceTrade: 0 },
+    hill: { defence: 4, food: 1, moveCost: 2, production: 0, resource: "coal", trade: 0, resourceFood: 0, resourceProduction: 2, resourceTrade: 0 },
+    jungle: { defence: 3, food: 1, moveCost: 2, production: 0, resource: "gem", trade: 0, resourceFood: 0, resourceProduction: 0, resourceTrade: 4 },
+    mountain: { defence: 6, food: 0, moveCost: 3, production: 1, resource: "gold", trade: 0, resourceFood: 0, resourceProduction: 0, resourceTrade: 6 },
+    ocean: { defence: 2, food: 1, moveCost: 1, production: 0, resource: "fish", trade: 0, resourceFood: 2, resourceProduction: 0, resourceTrade: 0 },
+    plains: { defence: 2, food: 1, moveCost: 1, production: 1, resource: "horse", trade: 0, resourceFood: 0, resourceProduction: 2, resourceTrade: 0 },
+    river: { defence: 3, food: 2, moveCost: 1, production: 0, resource: "shield", trade: 0, resourceFood: 0, resourceProduction: 1, resourceTrade: 0 },
+    riverMouth: { defence: 2, food: 1, moveCost: 1, production: 0, resource: "fish", trade: 0, resourceFood: 2, resourceProduction: 0, resourceTrade: 0 },
+    swamp: { defence: 3, food: ``, moveCost: 2, production: 0, resource: "oil", trade: 0 , resourceFood: 0, resourceProduction: 4, resourceTrade: 0 },
+    tundra: { defence: 2, food: 1, moveCost: 1, production: 0, resource: "game2", trade: 0, resourceFood: 3, resourceProduction: 0, resourceTrade: 0 }
+};
 PDA.GenerateMap.vocab = {
     arctic: "Arctic",
     coal: "Coal",
@@ -154,16 +169,8 @@ PDA.GenerateMap.vocab = {
 // Game_Map
 //=============================================================================
 
-Game_Map.prototype.geography = function() {
-    return this._geography;
-};
-
-Game_Map.prototype.huts = function() {
-    return this._huts;
-};
-
-Game_Map.prototype.resources = function() {
-    return this._resources;
+Game_Map.prototype.geography = function(x, y) {
+    return this._geography[y][x];
 };
 
 Game_Map.prototype.generateMap = function(landMass, temperature, climate, age) {
@@ -171,8 +178,7 @@ Game_Map.prototype.generateMap = function(landMass, temperature, climate, age) {
     this._worldTemperature = temperature;
     this._worldClimate = climate;
     this._worldAge = age;
-    this._huts = this.emptyLandMass();
-    this._resources = this.emptyLandMass();
+    this._geography = this.emptyLandMass();
     let geography = this.generateLandMass(this._worldLandMass);
     geography = this.adjustTemperature(geography, this._worldTemperature);
     geography = this.adjustClimate(geography, this._worldClimate);
@@ -203,15 +209,17 @@ Game_Map.prototype.generateMap = function(landMass, temperature, climate, age) {
 
     for (let y = 0; y < this.height(); y++) {
         for (let x = 0; x < this.width(); x++) {
+            const tile = new Game_CivTile(geography[y][x]);
             const val1 = (x * 13 / 4) + (y * 11 / 4) + resourceSeed;
             const val2 = ((x % 4) * 4 + (y % 4));
-            this._resources[y][x] = ((val1 % 16) === val2) ?
-                PDA.GenerateMap.resources[geography[y][x]] : "";
-            if (this._resources[y][x] !== "") {
-                mapData.push(PDA.GenerateMap.tileIds[this._resources[y][x]]);
+            if ((val1 % 16) === val2) {
+                tile.setResource(true);
+                mapData.push(PDA.GenerateMap.tileIds[tile.resource()]);
             } else {
                 mapData.push(0);
             }
+
+            this._geography[y][x] = tile;
         }
     }
 
@@ -219,8 +227,8 @@ Game_Map.prototype.generateMap = function(landMass, temperature, climate, age) {
         for (let x = 0; x < this.width(); x++) {
             const val1 = (x * 13 / 4) + (y * 11 / 4) + resourceSeed;
             const val2 = ((x % 4) * 4 + (y % 4));
-            this._huts[y][x] = (((val1 + 8) % 32) === val2);
-            if (this._huts[y][x] && geography[y][x] !== "ocean") {
+            if (((val1 + 8) % 32) === val2 && !["ocean", "riverMouth"].includes(geography[y][x])) {
+                this._geography[y][x].setHut(true);
                 mapData.push(PDA.GenerateMap.tileIds.hut);
             } else {
                 mapData.push(0);
@@ -228,7 +236,6 @@ Game_Map.prototype.generateMap = function(landMass, temperature, climate, age) {
         }
     }
 
-    this._geography = geography;
     this._mapData = mapData;
 };
 
@@ -693,6 +700,53 @@ Game_Map.prototype.generatedTileId = function(tile, neighbours, z) {
 };
 
 //=============================================================================
+// Game_CivTile
+//=============================================================================
+
+function Game_CivTile() {
+    this.initialize(...arguments);
+}
+
+Game_CivTile.prototype.initialize = function(type) {
+    this._type = type;
+    this._hut = false;
+    this._improvements = [];
+    this._resource = "";
+};
+
+Game_CivTile.prototype.canStartOn = function() {
+    return ["grassland", "plains", "river"].includes(this._type);
+};
+
+Game_CivTile.prototype.defence = function() {
+    return PDA.GenerateMap.tiles[this._type].defence;
+};
+
+Game_CivTile.prototype.fortress = function() {
+    return this._improvements.includes("fortress");
+};
+
+Game_CivTile.prototype.hut = function() {
+    return this._hut;
+};
+
+Game_CivTile.prototype.setHut = function(value) {
+    this._hut = value;
+};
+
+Game_CivTile.prototype.resource = function() {
+    return this._resource;
+};
+
+Game_CivTile.prototype.setResource = function(value) {
+    this._resource = value ? PDA.GenerateMap.tiles[this._type].resource : '';
+};
+
+Game_CivTile.prototype.type = function() {
+    return this._type;
+};
+
+//=============================================================================
 // Scene_Map
 //=============================================================================
 
@@ -735,19 +789,18 @@ Window_TileInfo.prototype.refresh = function() {
 };
 
 Window_TileInfo.prototype.drawTileInfo = function(x, y, width) {
-    const type = PDA.GenerateMap.vocab[$gameMap.geography()[this._y][this._x]];
+    const tile = $gameMap.geography(this._x, this._y);
+    const type = PDA.GenerateMap.vocab[tile.type()];
 
     this.drawText(type, x, y, width);
     this._lines++;
 
-    const resource = $gameMap.resources()[this._y][this._x];
-    if (resource !== "") {
-        this.drawText(PDA.GenerateMap.vocab[resource], x, y + this.lineHeight(), width);
+    if (tile.resource() !== "") {
+        this.drawText(PDA.GenerateMap.vocab[tile.resource()], x, y + this.lineHeight(), width);
         this._lines++;
     }
 
-    const hut = $gameMap.huts()[this._y][this._x];
-    if (hut) {
+    if (tile.hut()) {
         this.drawText(PDA.GenerateMap.vocab.hut, x, y + (this.lineHeight() * this._lines), width);
         this._lines++;
     }

@@ -24,7 +24,10 @@ The order I have tested them in is:
  * Units
    * Found cities
    * Simple movement
- * Simple city construction
+   * Battles
+ * City management
+   * Build buildings
+   * Create units
  * Game setup
 
 ## Todo
@@ -44,10 +47,10 @@ The order I have tested them in is:
      * Obsolescence
    * Yields
      * Resource bonuses
-   * Create units
    * Citizen BFC assignment
  * Map
    * Better resource graphics
+   * Fix resource / hut placement - I think something to do with mods on fractions is causing incorrect patterns, but I don't know how to fix, as from what I've read the common denominator would seem to be 4, but 4^-1 mod 16 has no solution.
    * Village gifts
    * Reveal on explore
    * Fix first and last column tile ids
@@ -58,8 +61,13 @@ The order I have tested them in is:
      * Enter name
      * Check tile type / proximity of other cities
    * Battles
+     * Unit stack
+     * Nuclear
    * Obsolescence
    * Work tiles
+   * Zone of control
+   * Embark units
+   * Move points
  * Victories
    * Space Race
    * Conquest

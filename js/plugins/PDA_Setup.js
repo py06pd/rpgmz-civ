@@ -215,7 +215,7 @@ Game_Map.prototype.startingPositions = function() {
     const positions = [];
     for (let y = 0; y < $gameMap.height(); y++) {
         for (let x = 0; x < $gameMap.width(); x++) {
-            if (["grassland", "plains", "river"].includes($gameMap.geography()[y][x])) {
+            if ($gameMap.geography(x, y).canStartOn()) {
                 positions.push({ x, y });
             }
         }
