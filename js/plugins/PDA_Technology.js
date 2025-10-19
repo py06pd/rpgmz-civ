@@ -123,6 +123,22 @@ PDA.Technology.Technologies = [
         PDA.Technology.Scene_Map_createAllWindows.call(this);
     };
 
+    PDA.Technology.Scene_Map_createMapNameWindow = Scene_Map.prototype.createMapNameWindow;
+    Scene_Map.prototype.createMapNameWindow = function() {
+    };
+
+    PDA.Technology.Scene_Map_onTransferEnd = Scene_Map.prototype.onTransferEnd;
+    Scene_Map.prototype.onTransferEnd = function() {
+        if (this._mapNameWindow) {
+            PDA.Technology.Scene_Map_onTransferEnd.call(this);
+        } else {
+            $gameMap.autoplay();
+            if (this.shouldAutosave()) {
+                this.requestAutosave();
+            }
+        }
+    };
+
     PDA.Technology.Scene_Map_updateScene = Scene_Map.prototype.updateScene;
     Scene_Map.prototype.updateScene = function() {
         PDA.Technology.Scene_Map_updateScene.call(this);
@@ -219,7 +235,7 @@ Scene_Map.prototype.createLearningTechnologyWindow = function() {
 Scene_Map.prototype.learningTechnologyWindowRect = function() {
     const ww = 170;
     const wh = this.calcWindowHeight(2, false);
-    return new Rectangle(0, wh, ww, wh);
+    return new Rectangle(0, 0, ww, wh);
 };
 
 //=============================================================================

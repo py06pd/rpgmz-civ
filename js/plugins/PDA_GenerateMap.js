@@ -8,6 +8,7 @@
  * @author Peter Dawson
  *
  * Civ1 map generation based on logic at https://forums.civfanatics.com/threads/civ1-map-generation-explained.498630/
+ * Civ1 resource and hut generation based on logic at https://forums.civfanatics.com/threads/modding-civilization-i-patterns-for-huts-and-special-resources.339049/
  *
  * Using Game_Map width and height rather than using hard coded values, but untested for width != 80 and height != 50
  *
@@ -16,7 +17,7 @@
 
 var PDA = PDA || {};
 PDA.GenerateMap = PDA.GenerateMap || {};
-PDA.GenerateMap.seaBaseTileId = 2048;
+PDA.GenerateMap.oceanBaseTileId = 2048;
 PDA.GenerateMap.arcticBaseTileId = 2528;
 PDA.GenerateMap.tundraBaseTileId = 3968;
 PDA.GenerateMap.desertBaseTileId = 3584;
@@ -27,6 +28,73 @@ PDA.GenerateMap.hillBaseTileId = 3104;
 PDA.GenerateMap.mountainBaseTileId = 3872;
 PDA.GenerateMap.forestBaseTileId = 3056;
 PDA.GenerateMap.jungleBaseTileId = 3776;
+PDA.GenerateMap.tileIds = {
+    arctic: 2528,
+    coal: 10,
+    desert: 3584,
+    fish: 10,
+    forest: 3056,
+    game1: 10,
+    game2: 10,
+    gem: 10,
+    gold: 10,
+    grassland: 2864,
+    horse: 10,
+    hill: 3104,
+    hut: 8,
+    jungle: 3776,
+    mountain: 3872,
+    oasis: 5,
+    ocean: 2048,
+    oil: 10,
+    plains: 2816,
+    river: 2096,
+    seal: 10,
+    shield: 10,
+    swamp: 4,
+    tundra: 3968,
+};
+PDA.GenerateMap.resources = {
+    arctic: "seal",
+    desert: "oasis",
+    forest: "game1",
+    grassland: "shield",
+    hill: "coal",
+    jungle: "gem",
+    mountain: "gold",
+    ocean: "fish",
+    plains: "horse",
+    river: "shield",
+    swamp: "oil",
+    tundra: "game2"
+};
+PDA.GenerateMap.vocab = {
+    arctic: "Arctic",
+    coal: "Coal",
+    desert: "Desert",
+    fish: "Fish",
+    forest: "Forest",
+    game1: "Game",
+    game2: "Game",
+    gem: "Gems",
+    gold: "Gold",
+    grassland: "Grassland",
+    horse: "Horses",
+    hill: "Hills",
+    hut: "Village",
+    jungle: "Jungle",
+    mountain: "Mountain",
+    oasis: "Oasis",
+    ocean: "Ocean",
+    oil: "Oil",
+    plains: "Plains",
+    river: "River",
+    riverMouth: "Ocean",
+    seal: "Seal",
+    shield: "Shield",
+    swamp: "Swamp",
+    tundra: "Tundra"
+};
 
 (function() {
 
@@ -38,6 +106,8 @@ PDA.GenerateMap.jungleBaseTileId = 3776;
     Game_Map.prototype.initialize = function() {
         PDA.GenerateMap.Game_Map_initialize.call(this);
         this._geography = [];
+        this._resources = [];
+        this._huts = [];
         this._mapData = [];
         // 0 = Small (islands), 1 = Normal (balanced), 2 = Large (pangaea)
         this._worldLandMass = 1;
@@ -68,6 +138,16 @@ PDA.GenerateMap.jungleBaseTileId = 3776;
         return true;
     };
 
+//=============================================================================
+// Scene_Map
+//=============================================================================
+
+    PDA.GenerateMap.Scene_Map_createAllWindows = Scene_Map.prototype.createAllWindows;
+    Scene_Map.prototype.createAllWindows = function() {
+        this.createTileInfoWindow();
+        PDA.GenerateMap.Scene_Map_createAllWindows.call(this);
+    };
+
 })(); // IIFE
 
 //=============================================================================
@@ -78,11 +158,21 @@ Game_Map.prototype.geography = function() {
     return this._geography;
 };
 
+Game_Map.prototype.huts = function() {
+    return this._huts;
+};
+
+Game_Map.prototype.resources = function() {
+    return this._resources;
+};
+
 Game_Map.prototype.generateMap = function(landMass, temperature, climate, age) {
     this._worldLandMass = landMass;
     this._worldTemperature = temperature;
     this._worldClimate = climate;
     this._worldAge = age;
+    this._huts = this.emptyLandMass();
+    this._resources = this.emptyLandMass();
     let geography = this.generateLandMass(this._worldLandMass);
     geography = this.adjustTemperature(geography, this._worldTemperature);
     geography = this.adjustClimate(geography, this._worldClimate);
@@ -91,6 +181,7 @@ Game_Map.prototype.generateMap = function(landMass, temperature, climate, age) {
     geography = this.generatePoles(geography);
 
     const mapData = [];
+    const resourceSeed = Math.randomInt(16);
     for (let z = 0; z < 2; z++) {
         for (let y = 0; y < this.height(); y++) {
             for (let x = 0; x < this.width(); x++) {
@@ -106,6 +197,33 @@ Game_Map.prototype.generateMap = function(landMass, temperature, climate, age) {
                 ];
 
                 mapData.push(this.generatedTileId(geography[y][x], neighbours, z));
+            }
+        }
+    }
+
+    for (let y = 0; y < this.height(); y++) {
+        for (let x = 0; x < this.width(); x++) {
+            const val1 = (x * 13 / 4) + (y * 11 / 4) + resourceSeed;
+            const val2 = ((x % 4) * 4 + (y % 4));
+            this._resources[y][x] = ((val1 % 16) === val2) ?
+                PDA.GenerateMap.resources[geography[y][x]] : "";
+            if (this._resources[y][x] !== "") {
+                mapData.push(PDA.GenerateMap.tileIds[this._resources[y][x]]);
+            } else {
+                mapData.push(0);
+            }
+        }
+    }
+
+    for (let y = 0; y < this.height(); y++) {
+        for (let x = 0; x < this.width(); x++) {
+            const val1 = (x * 13 / 4) + (y * 11 / 4) + resourceSeed;
+            const val2 = ((x % 4) * 4 + (y % 4));
+            this._huts[y][x] = (((val1 + 8) % 32) === val2);
+            if (this._huts[y][x] && geography[y][x] !== "ocean") {
+                mapData.push(PDA.GenerateMap.tileIds.hut);
+            } else {
+                mapData.push(0);
             }
         }
     }
@@ -240,12 +358,12 @@ Game_Map.prototype.adjustAge = function(geography, age) {
         } else if (geography[y][x] === "mountain") {
             if (
                 x > 0 && x < (this.width() - 1) && y > 0 && y < (this.height() - 1) &&
-                geography[y + 1][x - 1] !== "sea" &&
-                geography[y + 1][x + 1] !== "sea" &&
-                geography[y - 1][x + 1] !== "sea" &&
-                geography[y - 1][x - 1] !== "sea"
+                geography[y + 1][x - 1] !== "ocean" &&
+                geography[y + 1][x + 1] !== "ocean" &&
+                geography[y - 1][x + 1] !== "ocean" &&
+                geography[y - 1][x - 1] !== "ocean"
             ) {
-                geography[y][x] = "sea";
+                geography[y][x] = "ocean";
             }
         } else if (geography[y][x] === "desert") {
             geography[y][x] = "plains";
@@ -262,7 +380,7 @@ Game_Map.prototype.adjustClimate = function(geography, climate) {
         let wetness = 0;
         let latitude = Math.abs(Math.floor(this.height() / 2) - y);
         for (let x = 0; x < this.width(); x++) {
-            if (geography[y][x] === "sea") {
+            if (geography[y][x] === "ocean") {
                 const tileYield = Math.abs(latitude - Math.floor(this.height() / 4)) + (climate * 4);
                 if (tileYield > wetness) {
                     wetness++;
@@ -286,7 +404,7 @@ Game_Map.prototype.adjustClimate = function(geography, climate) {
 
         wetness = 0;
         for (let x = (this.width() - 1); x >= 0; x--) {
-            if (geography[y][x] === "sea") {
+            if (geography[y][x] === "ocean") {
                 const tileYield = (latitude / 2) + climate;
                 if (tileYield > wetness) {
                     wetness++;
@@ -332,7 +450,7 @@ Game_Map.prototype.adjustTemperature = function(geography, temperature) {
                     geography[y][x] = "plains";
                 }
             } else {
-                geography[y][x] = "sea";
+                geography[y][x] = "ocean";
             }
         }
     }
@@ -372,22 +490,22 @@ Game_Map.prototype.generateRivers = function(geography, landMass, climate) {
                 { y: tile.y - 1, x: tile.x - 1 },
             ];
             geography[tile.y][tile.x] = "river";
-            let seaNearby = null;
-            if (geography[tile.y + 1][tile.x] === "sea") {
-                seaNearby = { y: tile.y + 1, x: tile.x };
-            } else if (geography[tile.y][tile.x + 1] === "sea") {
-                seaNearby = { y: tile.y, x: tile.x + 1 };
-            } else if (geography[tile.y - 1][tile.x] === "sea") {
-                seaNearby = { y: tile.y - 1, x: tile.x };
-            } else if (geography[tile.y][tile.x - 1] === "sea") {
-                seaNearby = { y: tile.y, x: tile.x - 1 };
+            let oceanNearby = null;
+            if (geography[tile.y + 1][tile.x] === "ocean") {
+                oceanNearby = { y: tile.y + 1, x: tile.x };
+            } else if (geography[tile.y][tile.x + 1] === "ocean") {
+                oceanNearby = { y: tile.y, x: tile.x + 1 };
+            } else if (geography[tile.y - 1][tile.x] === "ocean") {
+                oceanNearby = { y: tile.y - 1, x: tile.x };
+            } else if (geography[tile.y][tile.x - 1] === "ocean") {
+                oceanNearby = { y: tile.y, x: tile.x - 1 };
             }
 
             A = ((C - (riverLength % 2)) * 2 + A + 8) % 8;
             riverLength++;
             tile = neighbours[A];
-            if (seaNearby || ["sea", "mountain", "river"].includes(geography[tile.y][tile.x])) {
-                if ((seaNearby || geography[tile.y][tile.x] === "river") && riverLength >= 5) {
+            if (oceanNearby || ["ocean", "mountain", "river"].includes(geography[tile.y][tile.x])) {
+                if ((oceanNearby || geography[tile.y][tile.x] === "river") && riverLength >= 5) {
                     riverCount++;
                     for (let y = -3; y < 4; y++) {
                         for (let x = -3; x < 4; x++) {
@@ -401,8 +519,8 @@ Game_Map.prototype.generateRivers = function(geography, landMass, climate) {
                         }
                     }
 
-                    if (seaNearby) {
-                        riverMouths.push(seaNearby);
+                    if (oceanNearby) {
+                        riverMouths.push(oceanNearby);
                     }
                 } else {
                     geography = backup;
@@ -447,45 +565,27 @@ Game_Map.prototype.generatedTileId = function(tile, neighbours, z) {
     let tileId = 0;
     let types = [];
     if (z === 0) {
-        if (tile === "sea" || tile === "riverMouth") {
-            types = ["sea", "riverMouth"];
-            tileId = PDA.GenerateMap.seaBaseTileId;
-        } else if (tile === "arctic") {
-            types = ["arctic"];
-            tileId = PDA.GenerateMap.arcticBaseTileId;
-        } else if (tile === "tundra") {
-            types = ["tundra"];
-            tileId = PDA.GenerateMap.tundraBaseTileId;
-        } else if (tile === "desert") {
-            types = ["desert"];
-            tileId = PDA.GenerateMap.desertBaseTileId;
-        } else {
+        if (tile === "ocean" || tile === "riverMouth") {
+            types = ["ocean", "riverMouth"];
+            tileId = PDA.GenerateMap.tileIds.ocean;
+        } else if (["grassland", "plains", "forest", "swamp", "jungle", "river", "hill", "mountain"].includes(tile)) {
             types = ["grassland", "plains", "forest", "swamp", "jungle", "river", "hill", "mountain"];
-            tileId = PDA.GenerateMap.plainsBaseTileId;
+            tileId = PDA.GenerateMap.tileIds.plains;
+        } else {
+            types = [tile];
+            tileId = PDA.GenerateMap.tileIds[tile];
         }
     } else if (z === 1) {
-        if (tile === "grassland") {
-            types = ["grassland"];
-            tileId = PDA.GenerateMap.grasslandBaseTileId;
-        } else if (tile === "river" || tile === "riverMouth") {
+        if (tile === "river" || tile === "riverMouth") {
             types = ["river", "riverMouth"];
-            tileId = PDA.GenerateMap.riverBaseTileId;
-        } else if (tile === "hill") {
-            types = ["hill"];
-            tileId = PDA.GenerateMap.hillBaseTileId;
-        } else if (tile === "mountain") {
-            types = ["mountain"];
-            tileId = PDA.GenerateMap.mountainBaseTileId;
-        } else if (tile === "forest") {
-            types = ["forest"];
-            tileId = PDA.GenerateMap.forestBaseTileId;
-        } else if (tile === "jungle") {
-            types = ["jungle"];
-            tileId = PDA.GenerateMap.jungleBaseTileId;
+            tileId = PDA.GenerateMap.tileIds.river;
+        } else if (["grassland", "hill", "mountain", "forest", "swamp", "jungle"].includes(tile)) {
+            types = [tile];
+            tileId = PDA.GenerateMap.tileIds[tile];
         }
     }
 
-    if (tileId > 0 && neighbours[0] && neighbours[2] && neighbours[4] && neighbours[6]) {
+    if (tileId > 0 && neighbours[0] && neighbours[2] && neighbours[4] && neighbours[6] && tile !== "swamp") {
         if (
             !types.includes(neighbours[6]) &&
             !types.includes(neighbours[0]) &&
@@ -590,4 +690,73 @@ Game_Map.prototype.generatedTileId = function(tile, neighbours, z) {
     }
 
     return tileId;
+};
+
+//=============================================================================
+// Scene_Map
+//=============================================================================
+
+Scene_Map.prototype.createTileInfoWindow = function() {
+    const rect = this.tileInfoWindowRect();
+    this._tileWindow = new Window_TileInfo(rect);
+    this.addWindow(this._tileWindow);
+};
+
+Scene_Map.prototype.tileInfoWindowRect = function() {
+    const wx = 0;
+    const wy = this.calcWindowHeight(2, false);
+    const ww = 170;
+    const wh = Graphics.boxHeight - this.calcWindowHeight(2, false) - this.calcWindowHeight(1, false);
+    return new Rectangle(wx, wy, ww, wh);
+};
+
+//=============================================================================
+// Window_TileInfo
+//=============================================================================
+
+function Window_TileInfo() {
+    this.initialize(...arguments);
+}
+
+Window_TileInfo.prototype = Object.create(Window_Base.prototype);
+Window_TileInfo.prototype.constructor = Window_TileInfo;
+
+Window_TileInfo.prototype.initialize = function(rect) {
+    Window_Base.prototype.initialize.call(this, rect);
+    this._x = -1;
+    this._y = -1;
+};
+
+Window_TileInfo.prototype.refresh = function() {
+    this.contents.clear();
+    const rect = this.baseTextRect();
+    this._lines = 0;
+    this.drawTileInfo(rect.x, rect.y, rect.width);
+};
+
+Window_TileInfo.prototype.drawTileInfo = function(x, y, width) {
+    const type = PDA.GenerateMap.vocab[$gameMap.geography()[this._y][this._x]];
+
+    this.drawText(type, x, y, width);
+    this._lines++;
+
+    const resource = $gameMap.resources()[this._y][this._x];
+    if (resource !== "") {
+        this.drawText(PDA.GenerateMap.vocab[resource], x, y + this.lineHeight(), width);
+        this._lines++;
+    }
+
+    const hut = $gameMap.huts()[this._y][this._x];
+    if (hut) {
+        this.drawText(PDA.GenerateMap.vocab.hut, x, y + (this.lineHeight() * this._lines), width);
+        this._lines++;
+    }
+};
+
+Window_TileInfo.prototype.update = function() {
+    if ($gamePlayer.x !== this._x || $gamePlayer.y !== this._y) {
+        this._x = $gamePlayer.x;
+        this._y = $gamePlayer.y;
+        this.refresh();
+    }
 };

@@ -98,11 +98,11 @@ PDA.CityBuilder.Buildings = [
         PDA.CityBuilder.Scene_CivSetup_setupGame.call(this);
 
         // Add city for all non-player empires
-        const plains = $gameMap.startingPositions();
+        const positions = $gameMap.startingPositions();
         const used = $gameMap.empire().cities().map(city => ({ x: city.x, y: city.y }));
-        $gameMap.empires().forEach(emp => {
-            const start = plains[Math.randomInt(plains.length)];
-            if (!used.includes(start)) {
+        $gameMap.empires().forEach((emp, index) => {
+            const start = positions[Math.randomInt(positions.length)];
+            if (index > 0 && !used.includes(start)) {
                 emp.addCity(new Game_City(emp.nextCityName(), start.x, start.y));
                 used.push(start);
             }
@@ -151,6 +151,17 @@ PDA.CityBuilder.Buildings = [
                 }
             });
         });
+    };
+
+//=============================================================================
+// Window_TileInfo
+//=============================================================================
+
+    PDA.CityBuilder.Window_TileInfo_refresh = Window_TileInfo.prototype.refresh;
+    Window_TileInfo.prototype.refresh = function() {
+        PDA.CityBuilder.Window_TileInfo_refresh.call(this);
+        const rect = this.baseTextRect();
+        this.drawCityInfo(rect.x, rect.y + this.lineHeight() * this._lines, rect.width);
     };
 })(); // IIFE
 
@@ -707,4 +718,18 @@ Window_CityBuild.prototype.refresh = function() {
         this.drawText(this._city.buildObject().label, rect.x, rect.y, rect.width - textWidth);
         this.drawText(progress, rect.x, rect.y, rect.width, "right");
     }
+};
+
+//=============================================================================
+// Window_TileInfo
+//=============================================================================
+
+Window_TileInfo.prototype.drawCityInfo = function(x, y, width) {
+    $gameMap.empires().forEach(emp => {
+        const found = emp.cities().find(city => city.x === this._x && city.y === this._y);
+        if (found) {
+            const label = found.name() + " (" + emp.empire().label + ")";
+            this.drawText(label, x, y, width);
+        }
+    });
 };

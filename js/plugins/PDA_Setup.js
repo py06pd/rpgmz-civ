@@ -9,6 +9,7 @@
  *
  * Setup game - choose
  *
+ * City list from https://gamefaqs.gamespot.com/pc/564621-sid-meiers-civilization/faqs/1845. Names not updated to modern names.
  * @help PDA_Setup.js
  */
 
@@ -66,7 +67,6 @@ PDA.Setup.vocab = {
     },
     civilizations: "{amount} Civilizations"
 };
-// City list from https://gamefaqs.gamespot.com/pc/564621-sid-meiers-civilization/faqs/1845. Names not updated to modern names.
 PDA.Setup.Empires = [
     {
         name: "roman",
@@ -211,21 +211,17 @@ Game_Map.prototype.empires = function() {
     return this._empires;
 };
 
-Game_Map.prototype.setEmpire = function(empire) {
-    this._empires.push(new Game_Empire(empire));
-};
-
 Game_Map.prototype.startingPositions = function() {
-    const plains = [];
+    const positions = [];
     for (let y = 0; y < $gameMap.height(); y++) {
         for (let x = 0; x < $gameMap.width(); x++) {
-            if ($gameMap.geography()[y][x] === "plains") {
-                plains.push({ x, y });
+            if (["grassland", "plains", "river"].includes($gameMap.geography()[y][x])) {
+                positions.push({ x, y });
             }
         }
     }
 
-    return plains;
+    return positions;
 };
 
 //=============================================================================
@@ -528,7 +524,7 @@ Scene_CivSetup.prototype.onEmpireCancel = function() {
 Scene_CivSetup.prototype.setupGame = function() {
     const empire = this._empireWindow.item();
     $gameMap.setDifficulty(this._difficultyWindow.index());
-    $gameMap.setEmpire(empire);
+    $gameMap.addEmpire(empire);
     $gameMap.generateMap(
         this._landMassWindow.index(),
         this._temperatureWindow.index(),
@@ -544,7 +540,7 @@ Scene_CivSetup.prototype.setupGame = function() {
     while ($gameMap.empires().length - 1 < this._competitionWindow.item()) {
         const names = $gameMap.empires().map(emp => emp.name());
         const options = PDA.Setup.empireOptions[this._competitionWindow.item()]
-            .filter(emp => emp !== empire && !names.includes(emp));
+            .filter(emp => !names.includes(emp));
         const index = Math.randomInt(options.length);
         $gameMap.addEmpire(options[index]);
     }

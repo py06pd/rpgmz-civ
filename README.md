@@ -18,6 +18,8 @@ The order I have tested them in is:
 ## Progess
 
  * Map generation
+   * Resources
+   * Villages
  * Simple technology learning
  * Units
    * Found cities
@@ -41,11 +43,12 @@ The order I have tested them in is:
      * Effects
      * Obsolescence
    * Yields
+     * Resource bonuses
    * Create units
    * Citizen BFC assignment
  * Map
-   * Generate resources
-   * Generate villages
+   * Better resource graphics
+   * Village gifts
    * Reveal on explore
    * Fix first and last column tile ids
    * Better river tile graphic

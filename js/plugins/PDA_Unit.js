@@ -197,6 +197,17 @@ PDA.Unit.Units = [
         }
     };
 
+//=============================================================================
+// Window_TileInfo
+//=============================================================================
+
+    PDA.Unit.Window_TileInfo_refresh = Window_TileInfo.prototype.refresh;
+    Window_TileInfo.prototype.refresh = function() {
+        PDA.Unit.Window_TileInfo_refresh.call(this);
+        const rect = this.baseTextRect();
+        this.drawUnitInfo(rect.x, rect.y + this.lineHeight() * this._lines, rect.width);
+    };
+
 })(); // IIFE
 
 //=============================================================================
@@ -328,6 +339,20 @@ Scene_Map.prototype.commandBuildCity = function() {
 Scene_Map.prototype.commandWait = function() {
     this.clearUnit();
     this._unitCommandWindow.close();
+};
+
+//=============================================================================
+// Window_TileInfo
+//=============================================================================
+
+Window_TileInfo.prototype.drawUnitInfo = function(x, y, width) {
+    $gameMap.empires().forEach(emp => {
+        const found = emp.units().find(unit => unit.x === this._x && unit.y === this._y);
+        if (found) {
+            const label = found.unit().label + " (" + emp.empire().label + ")";
+            this.drawText(label, x, y, width);
+        }
+    });
 };
 
 //=============================================================================
