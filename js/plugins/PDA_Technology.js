@@ -112,30 +112,12 @@ PDA.Technology.Technologies = [
         PDA.Technology.Scene_Map_createAllWindows.call(this);
     };
 
-    PDA.Technology.Scene_Map_createMapNameWindow = Scene_Map.prototype.createMapNameWindow;
-    Scene_Map.prototype.createMapNameWindow = function() {
-    };
-
-    PDA.Technology.Scene_Map_onTransferEnd = Scene_Map.prototype.onTransferEnd;
-    Scene_Map.prototype.onTransferEnd = function() {
-        if (this._mapNameWindow) {
-            PDA.Technology.Scene_Map_onTransferEnd.call(this);
-        } else {
-            $gameMap.autoplay();
-            if (this.shouldAutosave()) {
-                this.requestAutosave();
-            }
-        }
-    };
-
     PDA.Technology.Scene_Map_updateScene = Scene_Map.prototype.updateScene;
     Scene_Map.prototype.updateScene = function() {
         PDA.Technology.Scene_Map_updateScene.call(this);
-
-        this._learningTechnologyWindow.open();
         if (
             !$gameMap.empire().learningTechnology() && $gameMap.empire().scienceYield() > 0 &&
-            !this._selectTechnologyWindow.active
+            !this.isAnyInputWindowActive()
         ) {
             this._selectTechnologyWindow.open();
         }
@@ -147,9 +129,15 @@ PDA.Technology.Technologies = [
         $gameMap.empires().forEach(emp => emp.applyYield());
     };
 
-    PDA.Technology.Scene_Map_isPlayerActive = Scene_Map.prototype.isPlayerActive;
-    Scene_Map.prototype.isPlayerActive = function() {
-        return PDA.Technology.Scene_Map_isPlayerActive.call(this) && !this._selectTechnologyWindow.active;
+    PDA.Technology.Scene_Map_isAnyInputWindowActive = Scene_Map.prototype.isAnyInputWindowActive;
+    Scene_Map.prototype.isAnyInputWindowActive = function() {
+        return PDA.Technology.Scene_Map_isAnyInputWindowActive.call(this) || this._selectTechnologyWindow.active ||
+            this._selectTechnologyWindow.isClosing();
+    };
+
+    PDA.Technology.Window_MapName_update = Window_MapName.prototype.update;
+    Window_MapName.prototype.update = function() {
+        this.hide();
     };
 
 })(); // IIFE

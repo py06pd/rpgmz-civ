@@ -107,6 +107,8 @@ PDA.Unit.Units = [
 
     PDA.Unit.Scene_Map_createAllWindows = Scene_Map.prototype.createAllWindows;
     Scene_Map.prototype.createAllWindows = function() {
+        this.createCityEditWindow();
+        this.createCityNameInputWindow();
         this.createUnitCommandWindow();
         PDA.Unit.Scene_Map_createAllWindows.call(this);
     };
@@ -125,7 +127,7 @@ PDA.Unit.Units = [
     Scene_Map.prototype.updateScene = function() {
         PDA.Unit.Scene_Map_updateScene.call(this);
 
-        if (this._selectedUnit && !this._unitCommandWindow.active) {
+        if (this._selectedUnit && !this.isAnyInputWindowActive()) {
             this._selectedUnit.update(true);
             if (this._selectedUnit.moved() && !this._selectedUnit.isMoving()) {
                 $gameMap.empires().forEach((emp, index) => {
@@ -150,6 +152,13 @@ PDA.Unit.Units = [
         $gameMap.empire().units().forEach(unit => {
             unit.setMoved(false);
         });
+    };
+
+    PDA.Unit.Scene_Map_isAnyInputWindowActive = Scene_Map.prototype.isAnyInputWindowActive;
+    Scene_Map.prototype.isAnyInputWindowActive = function() {
+        return PDA.Unit.Scene_Map_isAnyInputWindowActive.call(this) ||
+            this._unitCommandWindow.active || this._unitCommandWindow.isClosing() ||
+            this._cityNameInputWindow.active || this._cityNameInputWindow.isClosing();
     };
 
     PDA.Unit.Scene_Map_processBack = Scene_Map.prototype.processBack;
@@ -408,6 +417,39 @@ Game_Empire.prototype.units = function() {
 // Scene_Map
 //=============================================================================
 
+Scene_Map.prototype.createCityEditWindow = function() {
+    const rect = this.cityEditWindowRect();
+    this._cityEditWindow = new Window_CityNameEdit(rect);
+    this._cityEditWindow.close();
+    this.addWindow(this._cityEditWindow);
+};
+
+Scene_Map.prototype.cityEditWindowRect = function() {
+    const ww = 600;
+    const wh = this.calcWindowHeight(1, true);
+    const wx = (Graphics.boxWidth - ww) / 2;
+    const wy = this.calcWindowHeight(1, true);
+    return new Rectangle(wx, wy, ww, wh);
+};
+
+Scene_Map.prototype.createCityNameInputWindow = function() {
+    const rect = this.cityNameInputWindowRect();
+    this._cityNameInputWindow = new Window_NameInput(rect);
+    this._cityNameInputWindow.setEditWindow(this._cityEditWindow);
+    this._cityNameInputWindow.setHandler("ok", this.onCityNameInputOk.bind(this));
+    this._cityNameInputWindow.close();
+    this._cityNameInputWindow.deactivate();
+    this.addWindow(this._cityNameInputWindow);
+};
+
+Scene_Map.prototype.cityNameInputWindowRect = function() {
+    const wx = this._cityEditWindow.x;
+    const wy = this._cityEditWindow.y + this._cityEditWindow.height + 8;
+    const ww = this._cityEditWindow.width;
+    const wh = this.calcWindowHeight(9, true);
+    return new Rectangle(wx, wy, ww, wh);
+};
+
 Scene_Map.prototype.createUnitCommandWindow = function() {
     const rect = this.unitCommandWindowRect();
     const commandWindow = new Window_UnitCommand(rect);
@@ -433,13 +475,19 @@ Scene_Map.prototype.clearUnit = function() {
 };
 
 Scene_Map.prototype.commandBuildCity = function() {
-    $gameMap.empire().removeUnit(this._selectedUnit);
-    if (PDA.Setup && PDA.CityBuilder) {
-        const next = $gameMap.empire().nextCityName();
-        $gameMap.empire().addCity(new Game_City(next, this._selectedUnit.x, this._selectedUnit.y));
+    if (PDA.GenerateMap) {
+        this._tileWindow.close();
     }
-    this.clearUnit();
+    if (PDA.Technology) {
+        this._learningTechnologyWindow.close();
+    }
+    if (PDA.TurnCounter) {
+        this._turnCountWindow.close();
+    }
     this._unitCommandWindow.close();
+    this._cityEditWindow.setup(PDA.Setup && PDA.CityBuilder ? $gameMap.empire().nextCityName() : '', 12);
+    this._cityNameInputWindow.open();
+    this._cityNameInputWindow.activate();
 };
 
 Scene_Map.prototype.commandWait = function() {
@@ -465,6 +513,68 @@ Scene_Map.prototype.performAttack = function(attacker, defender) {
     if (!victor.veteran() && Math.randomInt(2) === 1) {
         victor.setVeteran(true);
     }
+};
+
+Scene_Map.prototype.onCityNameInputOk = function() {
+    if (this._cityEditWindow.name().length > 3) {
+        $gameMap.empire().removeUnit(this._selectedUnit);
+        if (PDA.Setup && PDA.CityBuilder) {
+            $gameMap.empire().addCity(new Game_City(this._cityEditWindow.name(), this._selectedUnit.x, this._selectedUnit.y));
+        }
+        this.clearUnit();
+        this._cityEditWindow.close();
+        this._cityNameInputWindow.close();
+        this._cityNameInputWindow.deactivate();
+        if (PDA.GenerateMap) {
+            this._tileWindow.open();
+        }
+        if (PDA.Technology) {
+            this._learningTechnologyWindow.open();
+        }
+        if (PDA.TurnCounter) {
+            this._turnCountWindow.open();
+        }
+    }
+};
+
+//=============================================================================
+// Window_CityNameEdit
+//=============================================================================
+
+function Window_CityNameEdit() {
+    this.initialize(...arguments);
+}
+
+Window_CityNameEdit.prototype = Object.create(Window_NameEdit.prototype);
+Window_CityNameEdit.prototype.constructor = Window_CityNameEdit;
+
+Window_CityNameEdit.prototype.initialize = function(rect) {
+    Window_NameEdit.prototype.initialize.call(this, rect);
+};
+
+Window_CityNameEdit.prototype.setup = function(name, maxLength) {
+    this._maxLength = maxLength;
+    this._name = name.slice(0, this._maxLength);
+    this._index = this._name.length;
+    this._defaultName = this._name;
+    this.refresh();
+    this.open();
+};
+
+Window_CityNameEdit.prototype.left = function() {
+    const nameWidth = (this._maxLength + 1) * this.charWidth();
+    return (this.innerWidth - nameWidth) / 2;
+};
+
+Window_CityNameEdit.prototype.itemRect = function(index) {
+    const x = this.left() + index * this.charWidth();
+    const y = 0;
+    const width = this.charWidth();
+    const height = this.lineHeight();
+    return new Rectangle(x, y, width, height);
+};
+
+Window_CityNameEdit.prototype.drawActorFace = function() {
 };
 
 //=============================================================================

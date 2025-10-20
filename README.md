@@ -58,7 +58,6 @@ The order I have tested them in is:
    * Earth
  * Units
    * Found cities
-     * Enter name
      * Check tile type / proximity of other cities
    * Battles
      * Unit stack

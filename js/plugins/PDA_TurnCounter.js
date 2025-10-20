@@ -42,27 +42,38 @@ PDA.TurnCounter = PDA.TurnCounter || {};
         PDA.TurnCounter.Scene_Map_createAllWindows.call(this);
     };
 
+    PDA.TurnCounter.Scene_Map_isMenuEnabled = Scene_Map.prototype.isMenuEnabled;
+    Scene_Map.prototype.isMenuEnabled = function() {
+        return PDA.TurnCounter.Scene_Map_isMenuEnabled.call(this) && !this.isAnyInputWindowActive();
+    };
+
+    PDA.TurnCounter.Scene_Map_isPlayerActive = Scene_Map.prototype.isPlayerActive;
+    Scene_Map.prototype.isPlayerActive = function() {
+        return PDA.TurnCounter.Scene_Map_isPlayerActive.call(this) && !this.isAnyInputWindowActive();
+    };
+
     PDA.TurnCounter.Scene_Map_updateScene = Scene_Map.prototype.updateScene;
     Scene_Map.prototype.updateScene = function() {
         PDA.TurnCounter.Scene_Map_updateScene.call(this);
 
-        this._turnCountWindow.open();
-        if ($gamePlayer.screenX() > Graphics.boxWidth / 2) {
-            this._turnCountWindow.x = 0;
-        } else {
-            this._turnCountWindow.x = Graphics.boxWidth - this._turnCountWindow.width;
-        }
+        if (!this.isAnyInputWindowActive()) {
+            if ($gamePlayer.screenX() > Graphics.boxWidth / 2) {
+                this._turnCountWindow.x = 0;
+            } else {
+                this._turnCountWindow.x = Graphics.boxWidth - this._turnCountWindow.width;
+            }
 
-        if (Input.isRepeated("ok")) {
-            this.processOk($gamePlayer.x, $gamePlayer.y);
-        }
+            if (Input.isRepeated("ok")) {
+                this.processOk($gamePlayer.x, $gamePlayer.y);
+            }
 
-        if (Input.isRepeated("cancel")) {
-            this.processBack();
-        }
+            if (Input.isRepeated("cancel")) {
+                this.processBack();
+            }
 
-        if (Input.isTriggered("endTurn") && this.isPlayerActive()) {
-            this.endTurn();
+            if (Input.isTriggered("endTurn") && this.isPlayerActive()) {
+                this.endTurn();
+            }
         }
     };
 
@@ -128,6 +139,10 @@ Scene_Map.prototype.endTurn = function() {
     if ($gameMap.turnCount() === end[$gameMap.difficulty()]) {
         SceneManager.goto(Scene_Gameover);
     }
+};
+
+Scene_Map.prototype.isAnyInputWindowActive = function() {
+    return false;
 };
 
 Scene_Map.prototype.processBack = function() {

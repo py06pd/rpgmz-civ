@@ -807,6 +807,7 @@ Window_TileInfo.prototype.drawTileInfo = function(x, y, width) {
 };
 
 Window_TileInfo.prototype.update = function() {
+    Window_Base.prototype.update.call(this);
     if ($gamePlayer.x !== this._x || $gamePlayer.y !== this._y) {
         this._x = $gamePlayer.x;
         this._y = $gamePlayer.y;
