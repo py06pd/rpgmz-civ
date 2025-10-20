@@ -17,8 +17,6 @@ var PDA = PDA || {};
 PDA.Technology = PDA.Technology || {};
 
 PDA.Technology.Technologies = [
-    { name: 'irrigation', label: 'Irrigation', requires: [] },
-    { name: 'mining', label: 'Mining', requires: [] },
     { name: 'horseback', label: 'Horseback Riding', requires: [] },
     { name: 'burial', label: 'Ceremonial Burial', requires: [] },
     { name: 'pottery', label: 'Pottery', requires: [] },
@@ -100,17 +98,7 @@ PDA.Technology.Technologies = [
         PDA.Technology.Game_Empire_initialize.call(this, name);
         this._learnedTechnologies = [];
         this._technologyProgress = {};
-        this._learningTechnology = "";
-    };
-
-//=============================================================================
-// Scene_CivSetup
-//=============================================================================
-
-    PDA.Technology.Scene_CivSetup_setupGame = Scene_CivSetup.prototype.setupGame;
-    Scene_CivSetup.prototype.setupGame = function() {
-        PDA.Technology.Scene_CivSetup_setupGame.call(this);
-        $gameMap.empire().setLearningTechnology($gameMap.empire().canLearn()[0].name);
+        this._learningTechnology = null;
     };
 
 //=============================================================================
@@ -120,6 +108,7 @@ PDA.Technology.Technologies = [
     PDA.Technology.Scene_Map_createAllWindows = Scene_Map.prototype.createAllWindows;
     Scene_Map.prototype.createAllWindows = function() {
         this.createLearningTechnologyWindow();
+        this.createSelectTechnologyWindow();
         PDA.Technology.Scene_Map_createAllWindows.call(this);
     };
 
@@ -144,12 +133,23 @@ PDA.Technology.Technologies = [
         PDA.Technology.Scene_Map_updateScene.call(this);
 
         this._learningTechnologyWindow.open();
+        if (
+            !$gameMap.empire().learningTechnology() && $gameMap.empire().scienceYield() > 0 &&
+            !this._selectTechnologyWindow.active
+        ) {
+            this._selectTechnologyWindow.open();
+        }
     };
 
     PDA.Technology.Scene_Map_endTurn = Scene_Map.prototype.endTurn;
     Scene_Map.prototype.endTurn = function() {
         PDA.Technology.Scene_Map_endTurn.call(this);
         $gameMap.empires().forEach(emp => emp.applyYield());
+    };
+
+    PDA.Technology.Scene_Map_isPlayerActive = Scene_Map.prototype.isPlayerActive;
+    Scene_Map.prototype.isPlayerActive = function() {
+        return PDA.Technology.Scene_Map_isPlayerActive.call(this) && !this._selectTechnologyWindow.active;
     };
 
 })(); // IIFE
@@ -168,17 +168,10 @@ Game_Empire.prototype.applyYield = function() {
     if (science >= this.scienceCost()) {
         science = science - this.scienceCost();
         this.addTechnology(tech.name);
-
-        this.setLearningTechnology(this.canLearn()[0].name);
+        this.setLearningTechnology(null);
     }
 
     this.setScience(science);
-};
-
-Game_Empire.prototype.canLearn = function() {
-    return PDA.Technology.Technologies.filter(tech =>
-        !tech.requires.some(req => !this.learnedTechnology(req)) &&
-        !this.learnedTechnology(tech.name));
 };
 
 Game_Empire.prototype.learnedTechnology = function(name) {
@@ -190,7 +183,9 @@ Game_Empire.prototype.learnedTechnology = function(name) {
 };
 
 Game_Empire.prototype.learningTechnology = function() {
-    return PDA.Technology.Technologies.find(tech => tech.name === this._learningTechnology);
+    return this._learningTechnology ?
+        PDA.Technology.Technologies.find(tech => tech.name === this._learningTechnology) :
+        null;
 };
 
 Game_Empire.prototype.setLearningTechnology = function(name) {
@@ -238,8 +233,28 @@ Scene_Map.prototype.learningTechnologyWindowRect = function() {
     return new Rectangle(0, 0, ww, wh);
 };
 
+Scene_Map.prototype.createSelectTechnologyWindow = function() {
+    this._selectTechnologyWindow = new Window_SelectTechnology(this.selectTechnologyWindowRect());
+    this._selectTechnologyWindow.setHandler("ok", this.onTechnologyOk.bind(this));
+    this._selectTechnologyWindow.close();
+    this.addWindow(this._selectTechnologyWindow);
+};
+
+Scene_Map.prototype.selectTechnologyWindowRect = function() {
+    const ww = 240;
+    const wh = this.calcWindowHeight(6, true);
+    const x = (Graphics.boxWidth - ww) / 2;
+    const y = (Graphics.boxHeight - wh) / 2;
+    return new Rectangle(x, y, ww, wh);
+};
+
+Scene_Map.prototype.onTechnologyOk = function() {
+    $gameMap.empire().setLearningTechnology(this._selectTechnologyWindow.item().name);
+    this._selectTechnologyWindow.close();
+};
+
 //=============================================================================
-// Window_TurnCount
+// Window_LearningTechnology
 //=============================================================================
 
 function Window_LearningTechnology() {
@@ -284,5 +299,59 @@ Window_LearningTechnology.prototype.refresh = function() {
 
 Window_LearningTechnology.prototype.open = function() {
     this.refresh();
+    Window_Selectable.prototype.open.call(this);
+};
+
+//=============================================================================
+// Window_SelectTechnology
+//=============================================================================
+
+function Window_SelectTechnology() {
+    this.initialize(...arguments);
+}
+
+Window_SelectTechnology.prototype = Object.create(Window_Selectable.prototype);
+Window_SelectTechnology.prototype.constructor = Window_SelectTechnology;
+
+Window_SelectTechnology.prototype.initialize = function(rect) {
+    Window_Selectable.prototype.initialize.call(this, rect);
+    this._data = [];
+};
+
+Window_SelectTechnology.prototype.maxItems = function() {
+    return this._data ? this._data.length : 1;
+};
+
+Window_SelectTechnology.prototype.item = function() {
+    return this.itemAt(this.index());
+};
+
+Window_SelectTechnology.prototype.itemAt = function(index) {
+    return this._data && index >= 0 ? this._data[index] : null;
+};
+
+Window_SelectTechnology.prototype.makeItemList = function() {
+    this._data = PDA.Technology.Technologies.filter(tech =>
+        !tech.requires.some(req => !$gameMap.empire().learnedTechnology(req)) &&
+        !$gameMap.empire().learnedTechnology(tech.name));
+};
+
+Window_SelectTechnology.prototype.drawItem = function(index) {
+    const item = this.itemAt(index);
+    if (item) {
+        const rect = this.itemLineRect(index);
+        this.drawText(item.label, rect.x, rect.y, rect.width);
+    }
+};
+
+Window_SelectTechnology.prototype.open = function() {
+    this.makeItemList();
+    const height = this.fittingHeight(this.maxItems());
+    const y = (Graphics.boxHeight - height) / 2;
+    this.move(this.x, y, this.width, height);
+    this.createContents();
+    this.refresh();
+    this.forceSelect(0);
+    this.activate();
     Window_Selectable.prototype.open.call(this);
 };

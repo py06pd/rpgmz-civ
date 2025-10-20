@@ -20,7 +20,7 @@ The order I have tested them in is:
  * Map generation
    * Resources
    * Villages
- * Simple technology learning
+ * Learn technology
  * Units
    * Found cities
    * Simple movement
@@ -35,7 +35,7 @@ The order I have tested them in is:
  * Game setup
    * Leader name
  * Learn technology
-   * Select technology to learn
+   * Display tech info eg. leads to, buildings, wonders, units
  * City management
    * Buildings
      * Effects
@@ -75,6 +75,8 @@ The order I have tested them in is:
    * Hall of Fame
  * Barbarians
  * Other civs AI
+ * Trade technologies
+ * Steal technologies
  * Move variables / data to plugin inputs
  * Government types
  * Build palace
