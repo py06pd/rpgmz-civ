@@ -36,7 +36,6 @@ The order I have tested them in is:
 
  * Game setup
    * Occasional fatal error on map generation
-   * Leader name
  * Learn technology
    * Display tech info eg. leads to, buildings, wonders, units
  * City management

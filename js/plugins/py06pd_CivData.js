@@ -11,6 +11,7 @@
  *
  * Building list from https://civilization.fandom.com/wiki/List_of_buildings_in_Civ1
  * City list from https://gamefaqs.gamespot.com/pc/564621-sid-meiers-civilization/faqs/1845. Names not updated to modern names.
+ * Leader list from https://civilization.fandom.com/wiki/Leaders_(Civ1)
  * Tech list from https://civilization.fandom.com/wiki/List_of_advances_in_Civ1
  * Unit list from https://civilization.fandom.com/wiki/List_of_units_in_Civ1
  *
@@ -69,71 +70,99 @@ py06pd.CivData.Empires = [
     {
         name: "roman",
         label: "Roman",
+        leader: "Caesar",
+        traits: ["expansionistic", "civilised"],
         cityNames: ["Rome", "Caesarea", "Carthage", "Nicopolis", "Byzantium", "Brundisium", "Syracuse", "Antioch", "Palmyra", "Cyrene", "Gordion", "Tyrus", "Jerusalem", "Seleucia", "Ravenna", "Artaxata"]
     },
     {
         name: "babylonian",
         label: "Babylonian",
+        leader: "Hammurabi",
+        traits: ["friendly", "perfectionist", "civilised"],
         cityNames: ["Babylon", "Sumer", "Uruk", "Ninevah", "Ashur", "Ellipi", "Akkad", "Eridu", "Kish", "Nippur", "Shuruppak", "Zariqum", "Izibia", "Nimrud", "Arbela", "Zamua"]
     },
     {
         name: "german",
         label: "German",
+        leader: "Frederick",
+        traits: ["aggressive", "perfectionist", "civilised"],
         cityNames: ["Berlin", "Leipzig", "Hamburg", "Bremen", "Frankfurt", "Bonn", "Nuremburg", "Cologne", "Hannover", "Munich", "Stuttgart", "Heidelburg", "Salzburg", "Konigsberg", "Dortmond", "Brandenburg"]
     },
     {
         name: "egyptian",
         label: "Egyptian",
+        leader: "Ramesses",
+        traits: ["civilised"],
         cityNames: ["Thebes", "Memphis", "Oryx", "Heliopolis", "Gaza", "Alexandria", "Byblos", "Cairo", "Coptos", "Edfu", "Pithom", "Busirus", "Athribus", "Mendes", "Tanis", "Abydos"],
     },
     {
         name: "american",
         label: "American",
+        leader: "Abe Lincoln",
+        traits: ["friendly", "civilised"],
         cityNames: ["Washington", "New York", "Boston", "Philedelphia", "Atlanta", "Chicago", "Buffalo", "St. Louis", "Detroit", "New Orleans", "Baltimore", "Denver", "Cincinnati", "Dallas", "Los Angeles", "Las Vegas"],
     },
     {
         name: "greek",
         label: "Greek",
+        leader: "Alexander",
+        traits: ["expansionistic", "militaristic"],
         cityNames: ["Athens", "Sparta", "Corinth", "Delphi", "Eretria", "Pharsalos", "Argos", "Mycenae", "Herakleia", "Antioch", "Ephesos", "Rhodes", "Knossos", "Troy", "Pergamon", "Miletos"],
     },
     {
         name: "indian",
         label: "Indian",
+        leader: "M. Gandhi",
+        traits: ["friendly", "perfectionist"],
         cityNames: ["Delhi", "Bombay", "Madras", "Bangalore", "Calcutta", "Lahore", "Karachi", "Kolhapur", "Jaipur", "Hyderbad", "Bengal", "Chittagong", "Punjab", "Dacca", "Indus", "Ganges"],
     },
     {
         name: "russian",
         label: "Russian",
+        leader: "Stalin",
+        traits: ["aggressive", "militaristic"],
         cityNames: ["Moscow", "Leningrad", "Kiev", "Minsk", "Smolensk", "Odessa", "Sevastopol", "Tblisi", "Sverdlovsk", "Yakutsk", "Vladivostok", "Novograd", "Krasnoyarsk", "Riga", "Rostov", "Astrakhan"]
     },
     {
         name: "zulu",
         label: "Zulu",
+        leader: "Shaka",
+        traits: ["aggressive"],
         cityNames: ["Zimbabwe", "Ulundi", "Bapedi", "Hlobane", "Isandhlwana", "Intombe", "Mpondo", "Ngome", "Swazi", "Tugela", "Umtata", "Umfolozi", "Ibabanago", "Isipezi", "Amatikulu", "Zunquin"]
     },
     {
         name: "french",
         label: "French",
+        leader: "Napoleon",
+        traits: ["aggressive", "expansionistic", "civilised"],
         cityNames: ["Paris", "Orleans", "Lyons", "Tours", "Chartres", "Bordeaux", "Rouen", "Avignon", "Marseilles", "Grenoble", "Dijon", "Amiens", "Cherbourg", "Poitiers", "Toulouse", "Bayonne"]
     },
     {
         name: "aztec",
         label: "Aztec",
+        leader: "Montezuma",
+        traits: ["perfectionist", "civilised"],
         cityNames: ["Tenochtitlan", "Chiauhtia", "Chapultepec", "Coatepec", "Ayotzinco", "Itzapalapa", "Iztapam", "Mitxcoac", "Tucubaya", "Tecamac", "Tepezinco", "Ticoman", "Tlaxcala", "Xaltocan", "Xicalango", "Zumpanco"]
     },
     {
         name: "chinese",
         label: "Chinese",
+        leader: "Mao Tse Tung",
+        traits: ["civilised"],
         cityNames: ["Peking", "Shanghai", "Canton", "Nanking", "Tsingtao", "Hangchow", "Tientsin", "Tatung", "Macao", "Anyang", "Shantung", "Chinan", "Kaifeng", "Ningpo", "Paoting", "Yangchow"]
     },
     {
         name: "english",
         label: "English",
+        leader: "Elizabeth I",
+        traits: ["expansionistic"],
         cityNames: ["London", "Coventry", "Birmingham", "Dover", "Nottingham", "York", "Liverpool", "Brighton", "Oxford", "Reading", "Exeter", "Cambridge", "Hastings", "Canterbury", "Banbury", "Newcastle"]
     },
     {
         name: "mongol",
         label: "Mongol",
+        leader: "Genghis Khan",
+        traits: ["aggressive", "expansionistic", "militaristic"],
         cityNames: ["Samarkand", "Bokhara", "Nishapur", "Karakorum", "Kashgar", "Tabriz", "Aleppo", "Kabul", "Ormuz", "Basra", "Khanbalyk", "Khorasan", "Shangtu", "Kazan", "Quinsay", "Kerman"]
     }
 ];

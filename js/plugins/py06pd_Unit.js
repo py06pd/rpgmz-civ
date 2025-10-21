@@ -250,7 +250,7 @@ Scene_Map.prototype.commandBuildCity = function() {
         this._turnCountWindow.close();
     }
     this._unitCommandWindow.close();
-    this._cityEditWindow.setup(py06pd.Setup && py06pd.CityBuilder ? $gameMap.empire().nextCityName() : '', 12);
+    this._cityEditWindow.setup($gameMap.empire().nextCityName(), 12);
     this._cityNameInputWindow.open();
     this._cityNameInputWindow.activate();
 };
@@ -283,9 +283,7 @@ Scene_Map.prototype.performAttack = function(attacker, defender) {
 Scene_Map.prototype.onCityNameInputOk = function() {
     if (this._cityEditWindow.name().length > 3) {
         $gameMap.empire().removeUnit(this._selectedUnit);
-        if (py06pd.Setup && py06pd.CityBuilder) {
-            $gameMap.empire().addCity(new Game_City(this._cityEditWindow.name(), this._selectedUnit.x, this._selectedUnit.y));
-        }
+        $gameMap.empire().addCity(new Game_City(this._cityEditWindow.name(), this._selectedUnit.x, this._selectedUnit.y));
         this.clearUnit();
         this._cityEditWindow.close();
         this._cityNameInputWindow.close();

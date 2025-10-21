@@ -110,6 +110,8 @@ Scene_CivSetup.prototype.create = function() {
     this.createDifficultyWindow();
     this.createCompetitionWindow();
     this.createEmpireWindow();
+    this.createLeaderEditWindow();
+    this.createLeaderNameInputWindow();
     this._commandWindow.setWindows(
         [this._landMassWindow, this._temperatureWindow, this._climateWindow, this._ageWindow],
         [this._difficultyWindow, this._competitionWindow, this._empireWindow]
@@ -319,8 +321,10 @@ Scene_CivSetup.prototype.commandCiv = function() {
 };
 
 Scene_CivSetup.prototype.commandStart = function() {
-    this.setupGame();
-    SceneManager.goto(Scene_Map);
+    const empire = new Game_Empire(this._empireWindow.item());
+    this._leaderEditWindow.setup(empire.empire().leader, 12);
+    this._leaderNameInputWindow.open();
+    this._leaderNameInputWindow.activate();
 };
 
 Scene_CivSetup.prototype.onLandMassOK = function() {
@@ -384,6 +388,7 @@ Scene_CivSetup.prototype.setupGame = function() {
     const empire = this._empireWindow.item();
     $gameMap.setDifficulty(this._difficultyWindow.index());
     $gameMap.addEmpire(empire);
+    $gameMap.empire().setLeader(this._leaderEditWindow.name());
     alert(1);
     $gameMap.generateMap(
         this._landMassWindow.index(),
@@ -404,6 +409,84 @@ Scene_CivSetup.prototype.setupGame = function() {
         const index = Math.randomInt(options.length);
         $gameMap.addEmpire(options[index]);
     }
+};
+
+Scene_CivSetup.prototype.createLeaderEditWindow = function() {
+    const rect = this.leaderEditWindowRect();
+    this._leaderEditWindow = new Window_LeaderNameEdit(rect);
+    this._leaderEditWindow.close();
+    this.addWindow(this._leaderEditWindow);
+};
+
+Scene_CivSetup.prototype.leaderEditWindowRect = function() {
+    const ww = 600;
+    const wh = this.calcWindowHeight(1, true);
+    const wx = (Graphics.boxWidth - ww) / 2;
+    const wy = this.calcWindowHeight(1, true);
+    return new Rectangle(wx, wy, ww, wh);
+};
+
+Scene_CivSetup.prototype.createLeaderNameInputWindow = function() {
+    const rect = this.leaderNameInputWindowRect();
+    this._leaderNameInputWindow = new Window_NameInput(rect);
+    this._leaderNameInputWindow.setEditWindow(this._leaderEditWindow);
+    this._leaderNameInputWindow.setHandler("ok", this.onLeaderNameInputOk.bind(this));
+    this._leaderNameInputWindow.close();
+    this._leaderNameInputWindow.deactivate();
+    this.addWindow(this._leaderNameInputWindow);
+};
+
+Scene_CivSetup.prototype.leaderNameInputWindowRect = function() {
+    const wx = this._leaderEditWindow.x;
+    const wy = this._leaderEditWindow.y + this._leaderEditWindow.height + 8;
+    const ww = this._leaderEditWindow.width;
+    const wh = this.calcWindowHeight(9, true);
+    return new Rectangle(wx, wy, ww, wh);
+};
+
+Scene_CivSetup.prototype.onLeaderNameInputOk = function() {
+    this.setupGame();
+    SceneManager.goto(Scene_Map);
+};
+
+//=============================================================================
+// Window_LeaderNameEdit
+//=============================================================================
+
+function Window_LeaderNameEdit() {
+    this.initialize(...arguments);
+}
+
+Window_LeaderNameEdit.prototype = Object.create(Window_NameEdit.prototype);
+Window_LeaderNameEdit.prototype.constructor = Window_LeaderNameEdit;
+
+Window_LeaderNameEdit.prototype.initialize = function(rect) {
+    Window_NameEdit.prototype.initialize.call(this, rect);
+};
+
+Window_LeaderNameEdit.prototype.setup = function(name, maxLength) {
+    this._maxLength = maxLength;
+    this._name = name.slice(0, this._maxLength);
+    this._index = this._name.length;
+    this._defaultName = this._name;
+    this.refresh();
+    this.open();
+};
+
+Window_LeaderNameEdit.prototype.left = function() {
+    const nameWidth = (this._maxLength + 1) * this.charWidth();
+    return (this.innerWidth - nameWidth) / 2;
+};
+
+Window_LeaderNameEdit.prototype.itemRect = function(index) {
+    const x = this.left() + index * this.charWidth();
+    const y = 0;
+    const width = this.charWidth();
+    const height = this.lineHeight();
+    return new Rectangle(x, y, width, height);
+};
+
+Window_LeaderNameEdit.prototype.drawActorFace = function() {
 };
 
 //=============================================================================

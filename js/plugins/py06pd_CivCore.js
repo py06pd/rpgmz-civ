@@ -377,6 +377,7 @@ function Game_Empire() {
 
 Game_Empire.prototype.initialize = function(name) {
     this._name = name;
+    this._leader = this.empire().leader;
     this._cities = [];
     this._units = []
     this._learnedTechnologies = [];
@@ -411,6 +412,10 @@ Game_Empire.prototype.nextCityName = function() {
 
 Game_Empire.prototype.empire = function() {
     return py06pd.CivData.Empires.find(emp => emp.name === this._name);
+};
+
+Game_Empire.prototype.setLeader = function(name) {
+    this._leader = name;
 };
 
 Game_Empire.prototype.name = function() {
