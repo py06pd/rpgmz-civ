@@ -8,14 +8,16 @@ Code has been separated into different plugins for personal readability, but I h
 treating/testing them as discrete plugins.
 
 The order I have tested them in is:
- * PDA_GenerateMap
- * PDA_Setup
- * PDA_TurnCounter
- * PDA_Technology
- * PDA_Unit
- * PDA_CityBuilder
+ * py06pd_CivData
+ * py06pd_CivCore
+ * py06pd_GenerateMap
+ * py06pd_Setup
+ * py06pd_TurnCounter
+ * py06pd_Technology
+ * py06pd_Unit
+ * py06pd_CityBuilder
 
-## Progess
+## Progress
 
  * Map generation
    * Resources
@@ -33,6 +35,7 @@ The order I have tested them in is:
 ## Todo
 
  * Game setup
+   * Occasional fatal error on map generation
    * Leader name
  * Learn technology
    * Display tech info eg. leads to, buildings, wonders, units

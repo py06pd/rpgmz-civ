@@ -9,20 +9,19 @@
  *
  * Setup game - choose
  *
- * City list from https://gamefaqs.gamespot.com/pc/564621-sid-meiers-civilization/faqs/1845. Names not updated to modern names.
- * @help PDA_Setup.js
+ * @help py06pd_Setup.js
  */
 
-var PDA = PDA || {};
-PDA.Setup = PDA.Setup || {};
-PDA.Setup.empireOptions = [[], [], [],
+var py06pd = py06pd || {};
+py06pd.Setup = py06pd.Setup || {};
+py06pd.Setup.empireOptions = [[], [], [],
     ["roman", "babylonian", "german", "russian", "zulu", "french"],
     ["roman", "babylonian", "german", "egyptian", "russian", "zulu", "french", "aztec"],
     ["roman", "babylonian", "german", "egyptian", "american", "russian", "zulu", "french", "aztec", "chinese"],
     ["roman", "babylonian", "german", "egyptian", "american", "greek", "russian", "zulu", "french", "aztec", "chinese", "english"],
     ["roman", "babylonian", "german", "egyptian", "american", "greek", "indian", "russian", "zulu", "french", "aztec", "chinese", "english", "mongol"]
 ];
-PDA.Setup.vocab = {
+py06pd.Setup.vocab = {
     map: "Map Options",
     civ: "Game Options",
     start: "Start Game",
@@ -67,97 +66,14 @@ PDA.Setup.vocab = {
     },
     civilizations: "{amount} Civilizations"
 };
-PDA.Setup.Empires = [
-    {
-        name: "roman",
-        label: "Roman",
-        cityNames: ["Rome", "Caesarea", "Carthage", "Nicopolis", "Byzantium", "Brundisium", "Syracuse", "Antioch", "Palmyra", "Cyrene", "Gordion", "Tyrus", "Jerusalem", "Seleucia", "Ravenna", "Artaxata"]
-    },
-    {
-        name: "babylonian",
-        label: "Babylonian",
-        cityNames: ["Babylon", "Sumer", "Uruk", "Ninevah", "Ashur", "Ellipi", "Akkad", "Eridu", "Kish", "Nippur", "Shuruppak", "Zariqum", "Izibia", "Nimrud", "Arbela", "Zamua"]
-    },
-    {
-        name: "german",
-        label: "German",
-        cityNames: ["Berlin", "Leipzig", "Hamburg", "Bremen", "Frankfurt", "Bonn", "Nuremburg", "Cologne", "Hannover", "Munich", "Stuttgart", "Heidelburg", "Salzburg", "Konigsberg", "Dortmond", "Brandenburg"]
-    },
-    {
-        name: "egyptian",
-        label: "Egyptian",
-        cityNames: ["Thebes", "Memphis", "Oryx", "Heliopolis", "Gaza", "Alexandria", "Byblos", "Cairo", "Coptos", "Edfu", "Pithom", "Busirus", "Athribus", "Mendes", "Tanis", "Abydos"],
-    },
-    {
-        name: "american",
-        label: "American",
-        cityNames: ["Washington", "New York", "Boston", "Philedelphia", "Atlanta", "Chicago", "Buffalo", "St. Louis", "Detroit", "New Orleans", "Baltimore", "Denver", "Cincinnati", "Dallas", "Los Angeles", "Las Vegas"],
-    },
-    {
-        name: "greek",
-        label: "Greek",
-        cityNames: ["Athens", "Sparta", "Corinth", "Delphi", "Eretria", "Pharsalos", "Argos", "Mycenae", "Herakleia", "Antioch", "Ephesos", "Rhodes", "Knossos", "Troy", "Pergamon", "Miletos"],
-    },
-    {
-        name: "indian",
-        label: "Indian",
-        cityNames: ["Delhi", "Bombay", "Madras", "Bangalore", "Calcutta", "Lahore", "Karachi", "Kolhapur", "Jaipur", "Hyderbad", "Bengal", "Chittagong", "Punjab", "Dacca", "Indus", "Ganges"],
-    },
-    {
-        name: "russian",
-        label: "Russian",
-        cityNames: ["Moscow", "Leningrad", "Kiev", "Minsk", "Smolensk", "Odessa", "Sevastopol", "Tblisi", "Sverdlovsk", "Yakutsk", "Vladivostok", "Novograd", "Krasnoyarsk", "Riga", "Rostov", "Astrakhan"]
-    },
-    {
-        name: "zulu",
-        label: "Zulu",
-        cityNames: ["Zimbabwe", "Ulundi", "Bapedi", "Hlobane", "Isandhlwana", "Intombe", "Mpondo", "Ngome", "Swazi", "Tugela", "Umtata", "Umfolozi", "Ibabanago", "Isipezi", "Amatikulu", "Zunquin"]
-    },
-    {
-        name: "french",
-        label: "French",
-        cityNames: ["Paris", "Orleans", "Lyons", "Tours", "Chartres", "Bordeaux", "Rouen", "Avignon", "Marseilles", "Grenoble", "Dijon", "Amiens", "Cherbourg", "Poitiers", "Toulouse", "Bayonne"]
-    },
-    {
-        name: "aztec",
-        label: "Aztec",
-        cityNames: ["Tenochtitlan", "Chiauhtia", "Chapultepec", "Coatepec", "Ayotzinco", "Itzapalapa", "Iztapam", "Mitxcoac", "Tucubaya", "Tecamac", "Tepezinco", "Ticoman", "Tlaxcala", "Xaltocan", "Xicalango", "Zumpanco"]
-    },
-    {
-        name: "chinese",
-        label: "Chinese",
-        cityNames: ["Peking", "Shanghai", "Canton", "Nanking", "Tsingtao", "Hangchow", "Tientsin", "Tatung", "Macao", "Anyang", "Shantung", "Chinan", "Kaifeng", "Ningpo", "Paoting", "Yangchow"]
-    },
-    {
-        name: "english",
-        label: "English",
-        cityNames: ["London", "Coventry", "Birmingham", "Dover", "Nottingham", "York", "Liverpool", "Brighton", "Oxford", "Reading", "Exeter", "Cambridge", "Hastings", "Canterbury", "Banbury", "Newcastle"]
-    },
-    {
-        name: "mongol",
-        label: "Mongol",
-        cityNames: ["Samarkand", "Bokhara", "Nishapur", "Karakorum", "Kashgar", "Tabriz", "Aleppo", "Kabul", "Ormuz", "Basra", "Khanbalyk", "Khorasan", "Shangtu", "Kazan", "Quinsay", "Kerman"]
-    }
-];
 
 (function() {
-
-//=============================================================================
-// Game_Map
-//=============================================================================
-
-    PDA.Setup.Game_Map_initialize = Game_Map.prototype.initialize;
-    Game_Map.prototype.initialize = function() {
-        PDA.Setup.Game_Map_initialize.call(this);
-        this._difficulty = 0;
-        this._empires = [];
-    };
 
 //=============================================================================
 // Scene_Title
 //=============================================================================
 
-    PDA.Setup.Scene_Title_commandNewGame = Scene_Title.prototype.commandNewGame;
+    py06pd.Setup.Scene_Title_commandNewGame = Scene_Title.prototype.commandNewGame;
     Scene_Title.prototype.commandNewGame = function() {
         DataManager.setupNewGame();
         DataManager.loadMapData($dataSystem.startMapId);
@@ -166,63 +82,6 @@ PDA.Setup.Empires = [
         SceneManager.goto(Scene_CivSetup);
     };
 })(); // IIFE
-
-//=============================================================================
-// Game_Empire
-//=============================================================================
-
-function Game_Empire() {
-    this.initialize(...arguments);
-}
-
-Game_Empire.prototype.initialize = function(name) {
-    this._name = name;
-};
-
-Game_Empire.prototype.empire = function() {
-    return PDA.Setup.Empires.find(emp => emp.name === this._name);
-};
-
-Game_Empire.prototype.name = function() {
-    return this._name;
-};
-
-//=============================================================================
-// Game_Map
-//=============================================================================
-
-Game_Map.prototype.difficulty = function() {
-    return this._difficulty;
-};
-
-Game_Map.prototype.setDifficulty = function(difficulty) {
-    this._difficulty = difficulty;
-};
-
-Game_Map.prototype.addEmpire = function(empire) {
-    this._empires.push(new Game_Empire(empire));
-};
-
-Game_Map.prototype.empire = function() {
-    return this._empires[0];
-};
-
-Game_Map.prototype.empires = function() {
-    return this._empires;
-};
-
-Game_Map.prototype.startingPositions = function() {
-    const positions = [];
-    for (let y = 0; y < $gameMap.height(); y++) {
-        for (let x = 0; x < $gameMap.width(); x++) {
-            if ($gameMap.geography(x, y).canStartOn()) {
-                positions.push({ x, y });
-            }
-        }
-    }
-
-    return positions;
-};
 
 //=============================================================================
 // Scene_CivSetup
@@ -316,8 +175,8 @@ Scene_CivSetup.prototype.createLandMassWindow = function() {
     const rect = this.landMassWindowRect();
     this._landMassWindow = new Window_SetupMap(rect);
     this._landMassWindow.setOptions(
-        [PDA.Setup.vocab.landMass.small, PDA.Setup.vocab.landMass.normal, PDA.Setup.vocab.landMass.large],
-        [PDA.Setup.vocab.landMass.smallDesc, PDA.Setup.vocab.landMass.normalDesc, PDA.Setup.vocab.landMass.largeDesc]
+        [py06pd.Setup.vocab.landMass.small, py06pd.Setup.vocab.landMass.normal, py06pd.Setup.vocab.landMass.large],
+        [py06pd.Setup.vocab.landMass.smallDesc, py06pd.Setup.vocab.landMass.normalDesc, py06pd.Setup.vocab.landMass.largeDesc]
     );
     this._landMassWindow.forceSelect(1);
     this._landMassWindow.setHandler("ok", this.onLandMassOK.bind(this));
@@ -340,8 +199,8 @@ Scene_CivSetup.prototype.createTemperatureWindow = function() {
     this._temperatureWindow.setHandler("ok", this.onTemperatureOK.bind(this));
     this._temperatureWindow.setHandler("cancel", this.onTemperatureCancel.bind(this));
     this._temperatureWindow.setOptions(
-        [PDA.Setup.vocab.temperature.cool, PDA.Setup.vocab.temperature.temperate, PDA.Setup.vocab.temperature.warm],
-        [PDA.Setup.vocab.temperature.coolDesc, PDA.Setup.vocab.temperature.temperateDesc, PDA.Setup.vocab.temperature.warmDesc]
+        [py06pd.Setup.vocab.temperature.cool, py06pd.Setup.vocab.temperature.temperate, py06pd.Setup.vocab.temperature.warm],
+        [py06pd.Setup.vocab.temperature.coolDesc, py06pd.Setup.vocab.temperature.temperateDesc, py06pd.Setup.vocab.temperature.warmDesc]
     );
     this.addWindow(this._temperatureWindow);
 };
@@ -361,8 +220,8 @@ Scene_CivSetup.prototype.createClimateWindow = function() {
     this._climateWindow.setHandler("ok", this.onClimateOK.bind(this));
     this._climateWindow.setHandler("cancel", this.onClimateCancel.bind(this));
     this._climateWindow.setOptions(
-        [PDA.Setup.vocab.climate.arid, PDA.Setup.vocab.climate.normal, PDA.Setup.vocab.climate.wet],
-        [PDA.Setup.vocab.climate.aridDesc, PDA.Setup.vocab.climate.normalDesc, PDA.Setup.vocab.climate.wetDesc]
+        [py06pd.Setup.vocab.climate.arid, py06pd.Setup.vocab.climate.normal, py06pd.Setup.vocab.climate.wet],
+        [py06pd.Setup.vocab.climate.aridDesc, py06pd.Setup.vocab.climate.normalDesc, py06pd.Setup.vocab.climate.wetDesc]
     );
     this.addWindow(this._climateWindow);
 };
@@ -382,8 +241,8 @@ Scene_CivSetup.prototype.createAgeWindow = function() {
     this._ageWindow.setHandler("ok", this.onAgeOK.bind(this));
     this._ageWindow.setHandler("cancel", this.onAgeCancel.bind(this));
     this._ageWindow.setOptions(
-        [PDA.Setup.vocab.age.three, PDA.Setup.vocab.age.four, PDA.Setup.vocab.age.five],
-        [PDA.Setup.vocab.age.threeDesc, PDA.Setup.vocab.age.fourDesc, PDA.Setup.vocab.age.fiveDesc]
+        [py06pd.Setup.vocab.age.three, py06pd.Setup.vocab.age.four, py06pd.Setup.vocab.age.five],
+        [py06pd.Setup.vocab.age.threeDesc, py06pd.Setup.vocab.age.fourDesc, py06pd.Setup.vocab.age.fiveDesc]
     );
     this.addWindow(this._ageWindow);
 };
@@ -525,13 +384,14 @@ Scene_CivSetup.prototype.setupGame = function() {
     const empire = this._empireWindow.item();
     $gameMap.setDifficulty(this._difficultyWindow.index());
     $gameMap.addEmpire(empire);
+    alert(1);
     $gameMap.generateMap(
         this._landMassWindow.index(),
         this._temperatureWindow.index(),
         this._climateWindow.index(),
         this._ageWindow.index()
     );
-
+    alert(2);
     const plains = $gameMap.startingPositions();
     const start = plains[Math.randomInt(plains.length)];
     $gamePlayer.locate(start.x, start.y);
@@ -539,7 +399,7 @@ Scene_CivSetup.prototype.setupGame = function() {
 
     while ($gameMap.empires().length - 1 < this._competitionWindow.item()) {
         const names = $gameMap.empires().map(emp => emp.name());
-        const options = PDA.Setup.empireOptions[this._competitionWindow.item()]
+        const options = py06pd.Setup.empireOptions[this._competitionWindow.item()]
             .filter(emp => !names.includes(emp));
         const index = Math.randomInt(options.length);
         $gameMap.addEmpire(options[index]);
@@ -569,9 +429,9 @@ Window_SetupCommand.prototype.maxCols = function() {
 };
 
 Window_SetupCommand.prototype.makeCommandList = function() {
-    this.addCommand(PDA.Setup.vocab.map, "map");
-    this.addCommand(PDA.Setup.vocab.civ, "civ");
-    this.addCommand(PDA.Setup.vocab.start, "start");
+    this.addCommand(py06pd.Setup.vocab.map, "map");
+    this.addCommand(py06pd.Setup.vocab.civ, "civ");
+    this.addCommand(py06pd.Setup.vocab.start, "start");
 };
 
 Window_SetupCommand.prototype.setWindows = function(mapWindows, civWindows) {
@@ -675,11 +535,11 @@ Window_SetupDifficulty.prototype.item = function() {
 
 Window_SetupDifficulty.prototype.itemAt = function(index) {
     const data = [
-        PDA.Setup.vocab.difficulty.chieftain,
-        PDA.Setup.vocab.difficulty.warlord,
-        PDA.Setup.vocab.difficulty.prince,
-        PDA.Setup.vocab.difficulty.king,
-        PDA.Setup.vocab.difficulty.emperor
+        py06pd.Setup.vocab.difficulty.chieftain,
+        py06pd.Setup.vocab.difficulty.warlord,
+        py06pd.Setup.vocab.difficulty.prince,
+        py06pd.Setup.vocab.difficulty.king,
+        py06pd.Setup.vocab.difficulty.emperor
     ];
     return index >= 0 ? data[index] : null;
 };
@@ -729,7 +589,7 @@ Window_SetupCompetition.prototype.drawItem = function(index) {
     const item = this.itemAt(index);
     if (item) {
         const rect = this.itemLineRect(index);
-        const label = PDA.Setup.vocab.civilizations.replace("{amount}", item);
+        const label = py06pd.Setup.vocab.civilizations.replace("{amount}", item);
         this.drawText(label, rect.x, rect.y, rect.width);
     }
 };
@@ -767,7 +627,7 @@ Window_SetupEmpire.prototype.itemAt = function(index) {
 };
 
 Window_SetupEmpire.prototype.setup = function(competition, maxHeight) {
-    this._data = PDA.Setup.empireOptions[competition];
+    this._data = py06pd.Setup.empireOptions[competition];
     if (this._index >= this._data.length) {
         this.forceSelect(0);
     }
@@ -782,7 +642,7 @@ Window_SetupEmpire.prototype.drawItem = function(index) {
     const item = this.itemAt(index);
     if (item) {
         const rect = this.itemLineRect(index);
-        const empire = PDA.Setup.Empires.find(emp => emp.name === item);
+        const empire = py06pd.CivData.Empires.find(emp => emp.name === item);
         this.drawText(empire.label, rect.x, rect.y, rect.width);
     }
 };

@@ -12,23 +12,23 @@
  *
  * Using Game_Map width and height rather than using hard coded values, but untested for width != 80 and height != 50
  *
- * @help PDA_GenerateMap.js
+ * @help py06pd_GenerateMap.js
  */
 
-var PDA = PDA || {};
-PDA.GenerateMap = PDA.GenerateMap || {};
-PDA.GenerateMap.oceanBaseTileId = 2048;
-PDA.GenerateMap.arcticBaseTileId = 2528;
-PDA.GenerateMap.tundraBaseTileId = 3968;
-PDA.GenerateMap.desertBaseTileId = 3584;
-PDA.GenerateMap.plainsBaseTileId = 2816;
-PDA.GenerateMap.grasslandBaseTileId = 2864;
-PDA.GenerateMap.riverBaseTileId = 2096;
-PDA.GenerateMap.hillBaseTileId = 3104;
-PDA.GenerateMap.mountainBaseTileId = 3872;
-PDA.GenerateMap.forestBaseTileId = 3056;
-PDA.GenerateMap.jungleBaseTileId = 3776;
-PDA.GenerateMap.tileIds = {
+var py06pd = py06pd || {};
+py06pd.GenerateMap = py06pd.GenerateMap || {};
+py06pd.GenerateMap.oceanBaseTileId = 2048;
+py06pd.GenerateMap.arcticBaseTileId = 2528;
+py06pd.GenerateMap.tundraBaseTileId = 3968;
+py06pd.GenerateMap.desertBaseTileId = 3584;
+py06pd.GenerateMap.plainsBaseTileId = 2816;
+py06pd.GenerateMap.grasslandBaseTileId = 2864;
+py06pd.GenerateMap.riverBaseTileId = 2096;
+py06pd.GenerateMap.hillBaseTileId = 3104;
+py06pd.GenerateMap.mountainBaseTileId = 3872;
+py06pd.GenerateMap.forestBaseTileId = 3056;
+py06pd.GenerateMap.jungleBaseTileId = 3776;
+py06pd.GenerateMap.tileIds = {
     arctic: 2528,
     coal: 10,
     desert: 3584,
@@ -54,7 +54,7 @@ PDA.GenerateMap.tileIds = {
     swamp: 4,
     tundra: 3968,
 };
-PDA.GenerateMap.resources = {
+py06pd.GenerateMap.resources = {
     arctic: "seal",
     desert: "oasis",
     forest: "game1",
@@ -68,22 +68,7 @@ PDA.GenerateMap.resources = {
     swamp: "oil",
     tundra: "game2"
 };
-PDA.GenerateMap.tiles = {
-    arctic: { defence: 2, food: 0, moveCost: 2, production: 0, resource: "seal", trade: 0, resourceFood: 2, resourceProduction: 0, resourceTrade: 0 },
-    desert: { defence: 2, food: 0, moveCost: 1, production: 1, resource: "oasis", trade: 0, resourceFood: 3, resourceProduction: 0, resourceTrade: 0 },
-    forest: { defence: 3, food: 1, moveCost: 2, production: 2, resource: "game1", trade: 0, resourceFood: 2, resourceProduction: 0, resourceTrade: 0 },
-    grassland: { defence: 2, food: 2, moveCost: 1, production: 0, resource: "shield", trade: 0, resourceFood: 0, resourceProduction: 1, resourceTrade: 0 },
-    hill: { defence: 4, food: 1, moveCost: 2, production: 0, resource: "coal", trade: 0, resourceFood: 0, resourceProduction: 2, resourceTrade: 0 },
-    jungle: { defence: 3, food: 1, moveCost: 2, production: 0, resource: "gem", trade: 0, resourceFood: 0, resourceProduction: 0, resourceTrade: 4 },
-    mountain: { defence: 6, food: 0, moveCost: 3, production: 1, resource: "gold", trade: 0, resourceFood: 0, resourceProduction: 0, resourceTrade: 6 },
-    ocean: { defence: 2, food: 1, moveCost: 1, production: 0, resource: "fish", trade: 0, resourceFood: 2, resourceProduction: 0, resourceTrade: 0 },
-    plains: { defence: 2, food: 1, moveCost: 1, production: 1, resource: "horse", trade: 0, resourceFood: 0, resourceProduction: 2, resourceTrade: 0 },
-    river: { defence: 3, food: 2, moveCost: 1, production: 0, resource: "shield", trade: 0, resourceFood: 0, resourceProduction: 1, resourceTrade: 0 },
-    riverMouth: { defence: 2, food: 1, moveCost: 1, production: 0, resource: "fish", trade: 0, resourceFood: 2, resourceProduction: 0, resourceTrade: 0 },
-    swamp: { defence: 3, food: ``, moveCost: 2, production: 0, resource: "oil", trade: 0 , resourceFood: 0, resourceProduction: 4, resourceTrade: 0 },
-    tundra: { defence: 2, food: 1, moveCost: 1, production: 0, resource: "game2", trade: 0, resourceFood: 3, resourceProduction: 0, resourceTrade: 0 }
-};
-PDA.GenerateMap.vocab = {
+py06pd.GenerateMap.vocab = {
     arctic: "Arctic",
     coal: "Coal",
     desert: "Desert",
@@ -114,41 +99,10 @@ PDA.GenerateMap.vocab = {
 (function() {
 
 //=============================================================================
-// Game_Map
+// Game_Player
 //=============================================================================
 
-    PDA.GenerateMap.Game_Map_initialize = Game_Map.prototype.initialize;
-    Game_Map.prototype.initialize = function() {
-        PDA.GenerateMap.Game_Map_initialize.call(this);
-        this._geography = [];
-        this._resources = [];
-        this._huts = [];
-        this._mapData = [];
-        // 0 = Small (islands), 1 = Normal (balanced), 2 = Large (pangaea)
-        this._worldLandMass = 1;
-        // 0 = Cool (more arctic/tundra), 1 = Temperate (balanced), 2 = Warm (more desert)
-        this._worldTemperature = 1;
-        // 0 = Arid (more deserts), 1 = Normal (balanced), 2 = Wet (more jungle/swamp)
-        this._worldClimate = 1;
-        // 0 = 3 billion (more mountains), 1 = 4 billion (balanced), 2 = 5 billion (more hills/lakes)
-        this._worldAge = 1;
-    };
-
-    PDA.GenerateMap.Game_Map_data = Game_Map.prototype.data;
-    Game_Map.prototype.data = function() {
-        return this._mapData;
-    };
-
-    PDA.GenerateMap.Game_Map_tileId = Game_Map.prototype.tileId;
-    Game_Map.prototype.tileId = function(x, y, z) {
-        return this._mapData[(z * this.height() + y) * this.width() + x] || 0;
-    };
-
-    //=============================================================================
-    // Game_Player
-    //=============================================================================
-
-    PDA.GenerateMap.Game_Player_isMapPassable = Game_Player.prototype.isMapPassable;
+    py06pd.GenerateMap.Game_Player_isMapPassable = Game_Player.prototype.isMapPassable;
     Game_Player.prototype.isMapPassable = function(x, y, z) {
         return true;
     };
@@ -157,10 +111,10 @@ PDA.GenerateMap.vocab = {
 // Scene_Map
 //=============================================================================
 
-    PDA.GenerateMap.Scene_Map_createAllWindows = Scene_Map.prototype.createAllWindows;
+    py06pd.GenerateMap.Scene_Map_createAllWindows = Scene_Map.prototype.createAllWindows;
     Scene_Map.prototype.createAllWindows = function() {
         this.createTileInfoWindow();
-        PDA.GenerateMap.Scene_Map_createAllWindows.call(this);
+        py06pd.GenerateMap.Scene_Map_createAllWindows.call(this);
     };
 
 })(); // IIFE
@@ -168,10 +122,6 @@ PDA.GenerateMap.vocab = {
 //=============================================================================
 // Game_Map
 //=============================================================================
-
-Game_Map.prototype.geography = function(x, y) {
-    return this._geography[y][x];
-};
 
 Game_Map.prototype.generateMap = function(landMass, temperature, climate, age) {
     this._worldLandMass = landMass;
@@ -214,7 +164,7 @@ Game_Map.prototype.generateMap = function(landMass, temperature, climate, age) {
             const val2 = ((x % 4) * 4 + (y % 4));
             if ((val1 % 16) === val2) {
                 tile.setResource(true);
-                mapData.push(PDA.GenerateMap.tileIds[tile.resource()]);
+                mapData.push(py06pd.GenerateMap.tileIds[tile.resource()]);
             } else {
                 mapData.push(0);
             }
@@ -229,7 +179,7 @@ Game_Map.prototype.generateMap = function(landMass, temperature, climate, age) {
             const val2 = ((x % 4) * 4 + (y % 4));
             if (((val1 + 8) % 32) === val2 && !["ocean", "riverMouth"].includes(geography[y][x])) {
                 this._geography[y][x].setHut(true);
-                mapData.push(PDA.GenerateMap.tileIds.hut);
+                mapData.push(py06pd.GenerateMap.tileIds.hut);
             } else {
                 mapData.push(0);
             }
@@ -574,21 +524,21 @@ Game_Map.prototype.generatedTileId = function(tile, neighbours, z) {
     if (z === 0) {
         if (tile === "ocean" || tile === "riverMouth") {
             types = ["ocean", "riverMouth"];
-            tileId = PDA.GenerateMap.tileIds.ocean;
+            tileId = py06pd.GenerateMap.tileIds.ocean;
         } else if (["grassland", "plains", "forest", "swamp", "jungle", "river", "hill", "mountain"].includes(tile)) {
             types = ["grassland", "plains", "forest", "swamp", "jungle", "river", "hill", "mountain"];
-            tileId = PDA.GenerateMap.tileIds.plains;
+            tileId = py06pd.GenerateMap.tileIds.plains;
         } else {
             types = [tile];
-            tileId = PDA.GenerateMap.tileIds[tile];
+            tileId = py06pd.GenerateMap.tileIds[tile];
         }
     } else if (z === 1) {
         if (tile === "river" || tile === "riverMouth") {
             types = ["river", "riverMouth"];
-            tileId = PDA.GenerateMap.tileIds.river;
+            tileId = py06pd.GenerateMap.tileIds.river;
         } else if (["grassland", "hill", "mountain", "forest", "swamp", "jungle"].includes(tile)) {
             types = [tile];
-            tileId = PDA.GenerateMap.tileIds[tile];
+            tileId = py06pd.GenerateMap.tileIds[tile];
         }
     }
 
@@ -700,53 +650,6 @@ Game_Map.prototype.generatedTileId = function(tile, neighbours, z) {
 };
 
 //=============================================================================
-// Game_CivTile
-//=============================================================================
-
-function Game_CivTile() {
-    this.initialize(...arguments);
-}
-
-Game_CivTile.prototype.initialize = function(type) {
-    this._type = type;
-    this._hut = false;
-    this._improvements = [];
-    this._resource = "";
-};
-
-Game_CivTile.prototype.canStartOn = function() {
-    return ["grassland", "plains", "river"].includes(this._type);
-};
-
-Game_CivTile.prototype.defence = function() {
-    return PDA.GenerateMap.tiles[this._type].defence;
-};
-
-Game_CivTile.prototype.fortress = function() {
-    return this._improvements.includes("fortress");
-};
-
-Game_CivTile.prototype.hut = function() {
-    return this._hut;
-};
-
-Game_CivTile.prototype.setHut = function(value) {
-    this._hut = value;
-};
-
-Game_CivTile.prototype.resource = function() {
-    return this._resource;
-};
-
-Game_CivTile.prototype.setResource = function(value) {
-    this._resource = value ? PDA.GenerateMap.tiles[this._type].resource : '';
-};
-
-Game_CivTile.prototype.type = function() {
-    return this._type;
-};
-
-//=============================================================================
 // Scene_Map
 //=============================================================================
 
@@ -790,18 +693,18 @@ Window_TileInfo.prototype.refresh = function() {
 
 Window_TileInfo.prototype.drawTileInfo = function(x, y, width) {
     const tile = $gameMap.geography(this._x, this._y);
-    const type = PDA.GenerateMap.vocab[tile.type()];
+    const type = py06pd.GenerateMap.vocab[tile.type()];
 
     this.drawText(type, x, y, width);
     this._lines++;
 
     if (tile.resource() !== "") {
-        this.drawText(PDA.GenerateMap.vocab[tile.resource()], x, y + this.lineHeight(), width);
+        this.drawText(py06pd.GenerateMap.vocab[tile.resource()], x, y + this.lineHeight(), width);
         this._lines++;
     }
 
     if (tile.hut()) {
-        this.drawText(PDA.GenerateMap.vocab.hut, x, y + (this.lineHeight() * this._lines), width);
+        this.drawText(py06pd.GenerateMap.vocab.hut, x, y + (this.lineHeight() * this._lines), width);
         this._lines++;
     }
 };
