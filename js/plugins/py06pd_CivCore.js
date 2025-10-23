@@ -10,9 +10,7 @@
  * Core objects library
  * Civ1 unit attack/defence from https://forums.civfanatics.com/threads/civ1-combat-mechanics-explained.492843/
  *
- *
- * Science cost is calculated based on Lightbulb formula at
- * https://civfanatics.com/civ1/faq/section-d-tips-and-information/
+ * Science cost and corruption from https://civfanatics.com/civ1/faq/section-d-tips-and-information/
  *
  * @help py06pd_CivCore.js
  */
@@ -57,6 +55,7 @@ py06pd.CivCore.TileId = 122;
     };
 
 })(); // IIFE
+
 //=============================================================================
 // Game_City
 //=============================================================================
@@ -80,8 +79,9 @@ Object.defineProperties(Game_City.prototype, {
     }
 });
 
-Game_City.prototype.initialize = function(name, x, y) {
+Game_City.prototype.initialize = function(name, empire, x, y) {
     this._name = name;
+    this._empire = empire;
     this._x = x;
     this._y = y;
     this._buildings = [];
@@ -136,8 +136,40 @@ Game_City.prototype.hasBuilt = function(name) {
     return this._buildings.includes(name);
 };
 
+Game_City.prototype.corruption = function() {
+    const gov = this.empire().government();
+    if (gov === "democracy") {
+        return 0;
+    }
+
+    let distance = 32;
+    const capital = this.empire().cities().find(city => city.hasBuilt("palace"));
+    if (capital) {
+        distance = 10;
+        if (gov !== "communism") {
+            distance = Math.abs(this.x - capital.x) + Math.abs(this.y - capital.y);
+        }
+    }
+
+    const mod = { despotism: 8, anarchy: 12, monarchy: 16, communism: 20, republic: 24 };
+    let corruption = (this.tradeBase() * distance * 3) / (10 * mod[gov]);
+    if (this.hasBuilt("courthouse") || this.hasBuilt("palace")) {
+        corruption = corruption / 2;
+    }
+
+    return corruption;
+};
+
+Game_City.prototype.empire = function() {
+    return $gameMap.empires().find(emp => emp.name() === this._empire);
+};
+
 Game_City.prototype.name = function() {
     return this._name;
+};
+
+Game_City.prototype.goldYield = function() {
+    return Math.round(this.tradeYield() * this.empire().taxRate() / 100);
 };
 
 Game_City.prototype.productionYield = function() {
@@ -146,8 +178,20 @@ Game_City.prototype.productionYield = function() {
 };
 
 Game_City.prototype.scienceYield = function() {
-    // Stand-in science yield until it can be got from actual yield
-    return 1;
+    return this.tradeYield() - this.goldYield();
+};
+
+Game_City.prototype.tradeBase = function() {
+    return 2;
+};
+
+Game_City.prototype.tradeYield = function() {
+    return Math.max(0, this.tradeBase() - this.corruption());
+};
+
+Game_City.prototype.tradeYield = function() {
+    const trade = 2;
+    return Math.max(0, trade - this.corruption());
 };
 
 Game_City.prototype.setBuild = function(value) {
@@ -377,8 +421,11 @@ function Game_Empire() {
 
 Game_Empire.prototype.initialize = function(name) {
     this._name = name;
-    this._leader = this.empire().leader;
     this._cities = [];
+    this._government = "despotism";
+    this._leader = this.empire().leader;
+    this._luxuryRate = 0;
+    this._taxRate = 50;
     this._units = []
     this._learnedTechnologies = [];
     this._technologyProgress = {};
@@ -414,12 +461,32 @@ Game_Empire.prototype.empire = function() {
     return py06pd.CivData.Empires.find(emp => emp.name === this._name);
 };
 
+Game_Empire.prototype.government = function() {
+    return this._government;
+};
+
 Game_Empire.prototype.setLeader = function(name) {
     this._leader = name;
 };
 
+Game_Empire.prototype.luxuryRate = function() {
+    return this._luxuryRate;
+};
+
+Game_Empire.prototype.setLuxuryRate = function(rate) {
+    this._luxuryRate = rate;
+};
+
 Game_Empire.prototype.name = function() {
     return this._name;
+};
+
+Game_Empire.prototype.taxRate = function() {
+    return this._taxRate;
+};
+
+Game_Empire.prototype.setTaxRate = function(rate) {
+    this._taxRate = rate;
 };
 
 Game_Empire.prototype.addTechnology = function(name) {

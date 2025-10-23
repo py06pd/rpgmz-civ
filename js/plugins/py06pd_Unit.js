@@ -282,8 +282,9 @@ Scene_Map.prototype.performAttack = function(attacker, defender) {
 
 Scene_Map.prototype.onCityNameInputOk = function() {
     if (this._cityEditWindow.name().length > 3) {
-        $gameMap.empire().removeUnit(this._selectedUnit);
-        $gameMap.empire().addCity(new Game_City(this._cityEditWindow.name(), this._selectedUnit.x, this._selectedUnit.y));
+        const empire = $gameMap.empire();
+        empire.removeUnit(this._selectedUnit);
+        empire.addCity(new Game_City(this._cityEditWindow.name(), empire.name(), this._selectedUnit.x, this._selectedUnit.y));
         this.clearUnit();
         this._cityEditWindow.close();
         this._cityNameInputWindow.close();

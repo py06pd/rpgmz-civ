@@ -16,6 +16,7 @@ The order I have tested them in is:
  * py06pd_Technology
  * py06pd_Unit
  * py06pd_CityBuilder
+ * py06pd_CivMenu
 
 ## Progress
 
@@ -27,9 +28,13 @@ The order I have tested them in is:
    * Found cities
    * Simple movement
    * Battles
- * City management
+ * City
    * Build buildings
    * Create units
+   * Corruption
+ * Menu
+   * Tax rate
+   * Luxury rate
  * Game setup
 
 ## Todo
@@ -74,6 +79,11 @@ The order I have tested them in is:
    * Conquest
    * Time
    * Hall of Fame
+ * Menu
+   * Save
+   * Load
+   * Civilopedia
+   * Luxury rate
  * Barbarians
  * Other civs AI
  * Trade technologies
@@ -83,6 +93,5 @@ The order I have tested them in is:
  * Build palace
  * Build spaceship
  * Happiness
- * Corruption
  * Pollution
  * Volcanoes

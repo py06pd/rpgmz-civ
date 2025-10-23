@@ -29,7 +29,7 @@ py06pd.CityBuilder = py06pd.CityBuilder || {};
         $gameMap.empires().forEach((emp, index) => {
             const start = positions[Math.randomInt(positions.length)];
             if (index > 0 && !used.includes(start)) {
-                emp.addCity(new Game_City(emp.nextCityName(), start.x, start.y));
+                emp.addCity(new Game_City(emp.nextCityName(), emp.name(), start.x, start.y));
                 used.push(start);
             }
         });
