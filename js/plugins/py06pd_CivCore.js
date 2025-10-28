@@ -54,6 +54,10 @@ py06pd.CivCore.TileId = 122;
         return this._mapData[(z * this.height() + y) * this.width() + x] || 0;
     };
 
+    py06pd.CivCore.Spriteset_Map_createCharacters = Spriteset_Map.prototype.createCharacters;
+    Spriteset_Map.prototype.createCharacters = function() {
+        this._tilemap.addChild(new Sprite_Cursor($gamePlayer));
+    };
 })(); // IIFE
 
 //=============================================================================
@@ -86,6 +90,11 @@ Game_City.prototype.initialize = function(name, empire, x, y) {
     this._y = y;
     this._buildings = [];
     this._build = null;
+    this._population = 1;
+    this._workTiles = [{ x, y }];
+    const tile = $gameMap.geography(x, y);
+    tile.setIrrigation(true);
+    tile.setRoad(true);
 };
 
 Game_City.prototype.addBuilding = function(name) {
@@ -168,21 +177,35 @@ Game_City.prototype.name = function() {
     return this._name;
 };
 
+Game_City.prototype.foodYield = function() {
+    return this._workTiles.reduce((prev, curr) =>
+        prev + $gameMap.geography(curr.x, curr.y).food(this.empire().government()), 0);
+};
+
 Game_City.prototype.goldYield = function() {
     return Math.round(this.tradeYield() * this.empire().taxRate() / 100);
 };
 
+Game_City.prototype.population = function() {
+    return this._population;
+};
+
 Game_City.prototype.productionYield = function() {
-    // Stand-in production yield until it can be got from actual yield
-    return 1;
+    return this._workTiles.reduce((prev, curr) =>
+        prev + $gameMap.geography(curr.x, curr.y).production(this.empire().government()), 0);
 };
 
 Game_City.prototype.scienceYield = function() {
     return this.tradeYield() - this.goldYield();
 };
 
+Game_City.prototype.specialists = function() {
+    return this._population + 1 - this._workTiles.length;
+};
+
 Game_City.prototype.tradeBase = function() {
-    return 2;
+    return this._workTiles.reduce((prev, curr) =>
+        prev + $gameMap.geography(curr.x, curr.y).trade(this.empire().government()), 0);
 };
 
 Game_City.prototype.tradeYield = function() {
@@ -192,6 +215,19 @@ Game_City.prototype.tradeYield = function() {
 Game_City.prototype.tradeYield = function() {
     const trade = 2;
     return Math.max(0, trade - this.corruption());
+};
+
+Game_City.prototype.addWorkTile = function(x, y) {
+    this._workTiles.push({ x, y });
+};
+
+Game_City.prototype.isWorkTile = function(x, y) {
+    return this._workTiles.some(tile => tile.x === x && tile.y === y);
+};
+
+Game_City.prototype.removeWorkTile = function(x, y) {
+    const index = this._workTiles.indexOf(tile => tile.x === x && tile.y === y);
+    this._workTiles.splice(index, 1);
 };
 
 Game_City.prototype.setBuild = function(value) {
@@ -212,8 +248,12 @@ function Game_CivTile() {
 
 Game_CivTile.prototype.initialize = function(type) {
     this._type = type;
+    this._fortress = false;
     this._hut = false;
-    this._improvements = [];
+    this._irrigation = false;
+    this._mine = false;
+    this._railroad = false;
+    this._road = false;
     this._resource = "";
 };
 
@@ -225,8 +265,38 @@ Game_CivTile.prototype.defence = function() {
     return py06pd.CivData.Tiles[this._type].defence;
 };
 
+Game_CivTile.prototype.food = function(government) {
+    let food = py06pd.CivData.Tiles[this._type].food;
+    if (["desert", "grassland", "hill", "plains", "river"].includes(this._type) && this._irrigation) {
+        food += 1;
+        if (["grassland", "river"].includes(this._type) && ["anarchy", "despotism"].includes(government)) {
+            food -= 1;
+        }
+    }
+    if (this._resource) {
+        if (["arctic", "forest", "ocean", "tundra"].includes(this._type)) {
+            food += 2;
+        }
+        if (this._type === "desert") {
+            food += 3;
+        }
+        if (
+            ["desert", "forest", "ocean", "tundra"].includes(this._type) &&
+            ["anarchy", "despotism"].includes(government)
+        ) {
+            food -= 1;
+        }
+    }
+
+    if (this._railroad) {
+        food = Math.floor(food * 1.5);
+    }
+
+    return food;
+};
+
 Game_CivTile.prototype.fortress = function() {
-    return this._improvements.includes("fortress");
+    return this._fortress;
 };
 
 Game_CivTile.prototype.hut = function() {
@@ -237,12 +307,87 @@ Game_CivTile.prototype.setHut = function(value) {
     this._hut = value;
 };
 
+Game_CivTile.prototype.setIrrigation = function(value) {
+    this._irrigation = value;
+};
+
+Game_CivTile.prototype.production = function(government) {
+    let production = py06pd.CivData.Tiles[this._type].production;
+    if (this._mine) {
+        if (["desert", "mountain"].includes(this._type)) {
+            production += 1;
+        }
+        if (this._type === "hill") {
+            production += 3;
+            if (["anarchy", "despotism"].includes(government)) {
+                production -= 1;
+            }
+        }
+    }
+    if (this._resource) {
+        if (["grassland", "river"].includes(this._type)) {
+            production += 1;
+        }
+        if (["hill", "plains"].includes(this._type)) {
+            production += 2;
+            if (this._type === "plains" && ["anarchy", "despotism"].includes(government)) {
+                production -= 1;
+            }
+        }
+        if (this._type === "swamp") {
+            production += 4;
+        }
+    }
+
+    if (this._railroad) {
+        production = Math.floor(production * 1.5);
+    }
+
+    return production;
+};
+
 Game_CivTile.prototype.resource = function() {
     return this._resource;
 };
 
 Game_CivTile.prototype.setResource = function(value) {
     this._resource = value ? py06pd.CivData.Tiles[this._type].resource : '';
+};
+
+Game_CivTile.prototype.setRoad = function(value) {
+    this._road = value;
+};
+
+Game_CivTile.prototype.trade = function(government) {
+    let trade = py06pd.CivData.Tiles[this._type].trade;
+    if (this._road) {
+        if (["desert", "grassland", "plains"].includes(this._type)) {
+            trade += 1;
+        }
+        if (["democracy", "republic"].includes(government)) {
+            trade += 1;
+        }
+    }
+    if (this._resource) {
+        if (this._type === "jungle") {
+            trade += 4;
+        }
+        if (this._type === "mountain") {
+            trade += 6;
+        }
+        if (["jungle", "mountain"].includes(this._type) && ["anarchy", "despotism"].includes(government)) {
+            trade -= 1;
+        }
+    }
+    if (["ocean", "river"].includes(this._type) && ["democracy", "republic"].includes(government)) {
+        trade += 1;
+    }
+
+    if (this._railroad) {
+        trade = Math.floor(trade * 1.5);
+    }
+
+    return trade;
 };
 
 Game_CivTile.prototype.type = function() {
@@ -578,7 +723,7 @@ Game_Empire.prototype.units = function() {
 
 Game_Map.prototype.civSprites = function() {
     return this._empires
-        .reduce((all, emp) => all.concat(emp.cities().map(city => new Sprite_City(city.x, city.y))), [])
+        .reduce((all, emp) => all.concat(emp.cities().map(city => new Sprite_City(city.x, city.y, false))), [])
         .concat(this._empires.reduce((all, emp) => all.concat(emp.units()
             .map(unit => new Sprite_Character(unit))), []));
 };
@@ -647,11 +792,12 @@ function Sprite_City() {
 Sprite_City.prototype = Object.create(Sprite.prototype);
 Sprite_City.prototype.constructor = Sprite_City;
 
-Sprite_City.prototype.initialize = function(x, y) {
+Sprite_City.prototype.initialize = function(x, y, inMenu) {
     Sprite.prototype.initialize.call(this);
     this.initMembers();
     this._realX = x;
     this._realY = y;
+    this._inMenu =  inMenu;
 };
 
 Sprite_City.prototype.initMembers = function() {
@@ -678,7 +824,48 @@ Sprite_City.prototype.update = function() {
 Sprite_City.prototype.updatePosition = function() {
     const tw = $gameMap.tileWidth();
     const th = $gameMap.tileHeight();
-    this.x = Math.floor($gameMap.adjustX(this._realX) * tw + tw / 2);
-    this.y = Math.floor($gameMap.adjustY(this._realY) * th + th);
+    const realX = this._inMenu ? this._realX : $gameMap.adjustX(this._realX);
+    const realY = this._inMenu ? this._realY : $gameMap.adjustY(this._realY);
+    this.x = Math.floor(realX * tw + tw / 2);
+    this.y = Math.floor(realY * th + th);
     this.z = 1;
+};
+
+//=============================================================================
+// Sprite_Cursor
+//=============================================================================
+
+function Sprite_Cursor() {
+    this.initialize(...arguments);
+}
+
+Sprite_Cursor.prototype = Object.create(Sprite.prototype);
+Sprite_Cursor.prototype.constructor = Sprite_Cursor;
+
+Sprite_Cursor.prototype.initialize = function(cursor) {
+    Sprite.prototype.initialize.call(this);
+    this.anchor.x = 0.5;
+    this.anchor.y = 1;
+    this.bitmap = ImageManager.loadSystem("cursor");
+    this._cursor = cursor;
+};
+
+Sprite_Cursor.prototype.update = function() {
+    Sprite.prototype.update.call(this);
+    this.setFrame(0, 0, $gameMap.tileWidth(), $gameMap.tileHeight());
+    this.updatePosition();
+    this.updateVisibility();
+};
+
+Sprite_Cursor.prototype.updateVisibility = function() {
+    Sprite.prototype.updateVisibility.call(this);
+    if (this._cursor.isTransparent()) {
+        this.visible = false;
+    }
+};
+
+Sprite_Cursor.prototype.updatePosition = function() {
+    this.x = this._cursor.screenX();
+    this.y = this._cursor.screenY() + 6;
+    this.z = this._cursor.screenZ();
 };

@@ -72,8 +72,8 @@ Scene_CivMenu.prototype.createCommandWindow = function() {
     const commandWindow = new Window_CivMenuCommand(rect);
     commandWindow.setHandler("tax", this.commandTax.bind(this));
     commandWindow.setHandler("luxury", this.commandLuxury.bind(this));
-    //commandWindow.setHandler("options", this.commandOptions.bind(this));
-    //commandWindow.setHandler("save", this.commandSave.bind(this));
+    commandWindow.setHandler("options", this.commandOptions.bind(this));
+    commandWindow.setHandler("save", this.commandSave.bind(this));
     commandWindow.setHandler("gameEnd", this.commandGameEnd.bind(this));
     commandWindow.setHandler("cancel", this.popScene.bind(this));
     this.addWindow(commandWindow);
@@ -150,6 +150,14 @@ Scene_CivMenu.prototype.commandLuxury = function() {
     this._luxuryWindow.activate();
 };
 
+Scene_CivMenu.prototype.commandOptions = function() {
+    SceneManager.push(Scene_Options);
+};
+
+Scene_CivMenu.prototype.commandSave = function() {
+    SceneManager.push(Scene_Save);
+};
+
 Scene_CivMenu.prototype.commandGameEnd = function() {
     SceneManager.push(Scene_GameEnd);
 };
@@ -197,6 +205,8 @@ Window_CivMenuCommand.initCommandPosition = function() {
 Window_CivMenuCommand.prototype.makeCommandList = function() {
     this.addCommand(py06pd.CivMenu.vocabTaxRate, "tax", true);
     this.addCommand(py06pd.CivMenu.vocabLuxuryRate, "luxury", true);
+    this.addCommand(TextManager.options, "options", true);
+    this.addCommand(TextManager.save, "save", true);
     this.addCommand(TextManager.gameEnd, "gameEnd", true);
 };
 

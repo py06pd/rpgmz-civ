@@ -12,6 +12,10 @@
 
 var py06pd = py06pd || {};
 py06pd.CityBuilder = py06pd.CityBuilder || {};
+py06pd.CityBuilder.FoodIcon = 276;
+py06pd.CityBuilder.PopulationIcon = 135;
+py06pd.CityBuilder.ProductionIcon = 223;
+py06pd.CityBuilder.TradeIcon = 75;
 
 (function() {
 
@@ -136,6 +140,7 @@ Scene_City.prototype.createCommandWindow = function() {
     const rect = this.commandWindowRect();
     this._commandWindow = new Window_CityCommand(rect);
     this._commandWindow.setHelpWindow(this._helpWindow);
+    this._commandWindow.setHandler("manage", this.commandManage.bind(this));
     this._commandWindow.setHandler("build", this.commandBuild.bind(this));
     this._commandWindow.setHandler("cancel", this.popScene.bind(this));
     this._commandWindow.setHandler("pagedown", this.nextActor.bind(this));
@@ -169,6 +174,8 @@ Scene_City.prototype.yieldWindowRect = function() {
 Scene_City.prototype.createBFCWindow = function() {
     const rect = this.BFCWindowRect();
     this._bfcWindow = new Window_CityBFC(rect);
+    this._bfcWindow.setHandler("ok", this.onBFCOk.bind(this));
+    this._bfcWindow.setHandler("cancel", this.onBuildCancel.bind(this));
     this.addWindow(this._bfcWindow);
 };
 
@@ -177,7 +184,7 @@ Scene_City.prototype.BFCWindowRect = function() {
     const yieldWindowRect = this.yieldWindowRect();
     const wx = yieldWindowRect.width;
     const wy = commandWindowRect.y + commandWindowRect.height;
-    const ww = 200;
+    const ww = $gameMap.tileWidth() * 5;
     const wh = this.mainAreaHeight() - commandWindowRect.height;
     return new Rectangle(wx, wy, ww, wh);
 };
@@ -229,9 +236,30 @@ Scene_City.prototype.refreshActor = function() {
     this._buildWindow.setCity(city);
 };
 
+Scene_City.prototype.commandManage = function() {
+    this._bfcWindow.activate();
+    this._bfcWindow.select(2, 2);
+};
+
 Scene_City.prototype.commandBuild = function() {
     this._buildingsWindow.activate();
     this._buildingsWindow.select(0);
+};
+
+Scene_City.prototype.onBFCOk = function() {
+    const city = $gameMap.empire().cities()[this._index];
+    const mapX = this._bfcWindow.mapX();
+    const mapY = this._bfcWindow.mapY();
+    const workTile = city.isWorkTile(mapX, mapY);
+    if ((mapX !== city.x || mapY !== city.y) && workTile) {
+        city.removeWorkTile(mapX, mapY);
+    } else if (!workTile && city.specialists() > 0) {
+        city.addWorkTile(mapX, mapY);
+    } else {
+        SoundManager.playBuzzer();
+    }
+    this._bfcWindow.refresh();
+    this._bfcWindow.activate();
 };
 
 Scene_City.prototype.onBuildOk = function() {
@@ -266,6 +294,41 @@ Scene_City.prototype.previousActor = function() {
 
 Scene_City.prototype.helpAreaHeight = function() {
     return 0;
+};
+
+//=============================================================================
+// Sprite_Icon
+//=============================================================================
+
+function Sprite_Icon() {
+    this.initialize(...arguments);
+}
+
+Sprite_Icon.prototype = Object.create(Sprite.prototype);
+Sprite_Icon.prototype.constructor = Sprite_Icon;
+
+Sprite_Icon.prototype.initialize = function(x, y, icon) {
+    Sprite.prototype.initialize.call(this);
+    this.initMembers();
+    this.loadBitmap();
+
+    this.x = x;
+    this.y = y;
+    const pw = ImageManager.iconWidth / 2;
+    const ph = ImageManager.iconHeight / 2;
+    const sx = (icon % 16) * pw;
+    const sy = Math.floor(icon / 16) * ph;
+    this.setFrame(sx, sy, pw, ph);
+};
+
+Sprite_Icon.prototype.initMembers = function() {
+    this.anchor.x = 0.5;
+    this.anchor.y = 0.5;
+};
+
+Sprite_Icon.prototype.loadBitmap = function() {
+    this.bitmap = ImageManager.loadSystem("IconSet2");
+    this.setFrame(0, 0, 0, 0);
 };
 
 //=============================================================================
@@ -315,10 +378,11 @@ Window_CityCommand.prototype.initialize = function(rect) {
 };
 
 Window_CityCommand.prototype.maxCols = function() {
-    return 1;
+    return 2;
 };
 
 Window_CityCommand.prototype.makeCommandList = function() {
+    this.addCommand("Manage", "manage");
     this.addCommand("Build", "build");
 };
 
@@ -361,12 +425,14 @@ function Window_CityBFC() {
     this.initialize(...arguments);
 }
 
-Window_CityBFC.prototype = Object.create(Window_StatusBase.prototype);
+Window_CityBFC.prototype = Object.create(Window_Selectable.prototype);
 Window_CityBFC.prototype.constructor = Window_CityBFC;
 
 Window_CityBFC.prototype.initialize = function(rect) {
-    Window_StatusBase.prototype.initialize.call(this, rect);
+    Window_Selectable.prototype.initialize.call(this, rect);
     this._city = null;
+    this._cursorX = 2;
+    this._cursorY = 2;
     this.refresh();
 };
 
@@ -377,10 +443,174 @@ Window_CityBFC.prototype.setCity = function(city) {
     }
 };
 
+Window_CityBFC.prototype.createTilemap = function() {
+    const tilemap = new Tilemap();
+    const data = [];
+    for (let z = 0; z < 2; z++) {
+        for (let y = 0; y < 5; y++) {
+            const offsetY = this._city.y + y - 2;
+            for (let x = 0; x < 5; x++) {
+                const offsetX = this._city.x + x - 2;
+                if ((x === 0 && (y === 0 || y === 4)) || (x === 4 && (y === 0 || y === 4))) {
+                    data.push(0);
+                } else {
+                    data.push($gameMap.data()[(z * $gameMap.height() + offsetY) * $gameMap.width() + offsetX])
+                }
+            }
+        }
+    }
+
+    tilemap.tileWidth = $gameMap.tileWidth();
+    tilemap.tileHeight = $gameMap.tileHeight();
+    tilemap.setData(5, 5, data);
+    tilemap.horizontalWrap = false;
+    tilemap.verticalWrap = false;
+    this.addChild(tilemap);
+    this._tilemap = tilemap;
+    this.loadTileset();
+};
+
+Window_CityBFC.prototype.loadTileset = function() {
+    const bitmaps = [];
+    const tilesetNames = $gameMap.tileset().tilesetNames;
+    for (const name of tilesetNames) {
+        bitmaps.push(ImageManager.loadTileset(name));
+    }
+    this._tilemap.setBitmaps(bitmaps);
+    this._tilemap.flags = $gameMap.tilesetFlags();
+};
+
+Window_CityBFC.prototype.processCursorMove = function() {
+    if (this.isOpenAndActive()) {
+        const lastX = this.x;
+        const lastY = this.y;
+        if (Input.isRepeated("down")) {
+            this.cursorDown();
+        }
+        if (Input.isRepeated("up")) {
+            this.cursorUp();
+        }
+        if (Input.isRepeated("right")) {
+            this.cursorRight();
+        }
+        if (Input.isRepeated("left")) {
+            this.cursorLeft();
+        }
+        if (this.x !== lastX || this.y !== lastY) {
+            this.playCursorSound();
+        }
+    }
+};
+
+Window_CityBFC.prototype.cursorDown = function() {
+    this.select(this._cursorX, this._cursorY + 1);
+};
+
+Window_CityBFC.prototype.cursorUp = function() {
+    this.select(this._cursorX, this._cursorY - 1);
+};
+
+Window_CityBFC.prototype.cursorRight = function() {
+    this.select(this._cursorX + 1, this._cursorY);
+};
+
+Window_CityBFC.prototype.cursorLeft = function() {
+    this.select(this._cursorX - 1, this._cursorY);
+};
+
+Window_CityBFC.prototype.mapX = function() {
+    return this._city.x + this._cursorX - 2;
+};
+
+Window_CityBFC.prototype.mapY = function() {
+    return this._city.y + this._cursorY - 2;
+};
+
+Window_CityBFC.prototype.reselect = function() {
+    this.select(this._cursorX, this._cursorY);
+};
+
+Window_CityBFC.prototype.select = function(x, y) {
+    let maxX = 4;
+    let maxY = 4;
+    let minX = 0;
+    let minY = 0;
+    if (x !== this._cursorX && (y === 0 || y === 4)) {
+        maxX = 3;
+        minX = 1;
+    }
+    if (y !== this._cursorY && (x === 0 || x === 4)) {
+        maxY = 3;
+        minY = 1;
+    }
+    this._cursorX = x < minX ? maxX : (x > maxX ? minX : x);
+    this._cursorY = y < minY ? maxY : (y > maxY ? minY : y);
+};
+
+Window_CityBFC.prototype.screenX = function() {
+    return this._cursorX * $gameMap.tileWidth() + 24;
+};
+
+Window_CityBFC.prototype.screenY = function() {
+    return this._cursorY * $gameMap.tileHeight() + 48 - 6;
+};
+
+Window_CityBFC.prototype.screenZ = function() {
+    return 3;
+};
+
+Window_CityBFC.prototype.isTransparent = function() {
+    return false;
+};
+
 Window_CityBFC.prototype.refresh = function() {
     this.contents.clear();
     if (this._city) {
-        // draw BFC here
+        this.createTilemap();
+        const government = $gameMap.empire().government();
+        for (let y = 0; y < 5; y++) {
+            const offsetY = this._city.y + y - 2;
+            for (let x = 0; x < 5; x++) {
+                if ((x !== 0 && x !== 4) || (y !== 0 && y !== 4)) {
+                    const offsetX = this._city.x + x - 2;
+                    if ($gameMap.empires().some(emp => !!emp.city(offsetX, offsetY))) {
+                        this.addChild(new Sprite_City(x, y, true));
+                    }
+                    if (this._city.isWorkTile(offsetX, offsetY)) {
+                        const tile = $gameMap.geography(offsetX, offsetY);
+                        const food = tile.food(government);
+                        const production = tile.production(government);
+                        const trade = tile.trade(government);
+                        const ax = (x * $gameMap.tileHeight()) + 8;
+                        const ay = (y * $gameMap.tileHeight()) + 8;
+                        for (let i = 0; i < food; i++) {
+                            const bx = ax + (16 * i);
+                            this.addChild(new Sprite_Icon(bx, ay, py06pd.CityBuilder.FoodIcon));
+                        }
+                        for (let i = 0; i < production; i++) {
+                            const bx = ax + (16 * i);
+                            this.addChild(new Sprite_Icon(bx, ay + 16, py06pd.CityBuilder.ProductionIcon));
+                        }
+                        for (let i = 0; i < trade; i++) {
+                            const bx = ax + (16 * i);
+                            this.addChild(new Sprite_Icon(bx, ay + 32, py06pd.CityBuilder.TradeIcon));
+                        }
+                    }
+                }
+            }
+        }
+        this.addChild(new Sprite_Cursor(this));
+        const y = $gameMap.tileHeight() * 5;
+        const spaceY = ImageManager.iconHeight + 6;
+        this.drawIcon(py06pd.CityBuilder.PopulationIcon, 0, y);
+        this.drawText(this._city.population(), ImageManager.iconWidth + 6, y, this.contentsWidth());
+        this.drawIcon(py06pd.CityBuilder.FoodIcon, 0, y + spaceY);
+        this.drawText(this._city.foodYield(), ImageManager.iconWidth + 6, y + spaceY, this.contentsWidth());
+        this.drawIcon(py06pd.CityBuilder.ProductionIcon, 0, y + spaceY * 2);
+        this.drawText(this._city.productionYield(), ImageManager.iconWidth + 6, y + spaceY * 2, this.contentsWidth());
+        this.drawIcon(py06pd.CityBuilder.TradeIcon, 0, y + spaceY * 3);
+        this.drawText(this._city.tradeBase(), ImageManager.iconWidth + 6, y + spaceY * 3, this.contentsWidth());
+
     }
 };
 

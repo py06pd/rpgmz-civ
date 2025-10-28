@@ -21,18 +21,6 @@ py06pd.Unit.vocabWait = "Wait";
 (function() {
 
 //=============================================================================
-// Game_Player
-//=============================================================================
-
-    Game_Player.prototype.characterName = function() {
-        return "cursor";
-    };
-
-    Game_Player.prototype.isObjectCharacter = function() {
-        return true;
-    };
-
-//=============================================================================
 // Scene_CivSetup
 //=============================================================================
 
@@ -141,28 +129,6 @@ py06pd.Unit.vocabWait = "Wait";
         }
 
         return consumed;
-    };
-
-//=============================================================================
-// Sprite_Character
-//=============================================================================
-
-    py06pd.Unit.Sprite_Character_setCharacterBitmap = Sprite_Character.prototype.setCharacterBitmap;
-    Sprite_Character.prototype.setCharacterBitmap = function() {
-        if (this._characterName === "cursor") {
-            this.bitmap = ImageManager.loadSystem("cursor");
-        } else {
-            py06pd.Unit.Sprite_Character_setCharacterBitmap.call(this);
-        }
-    };
-
-    py06pd.Unit.Sprite_Character_updateCharacterFrame = Sprite_Character.prototype.updateCharacterFrame;
-    Sprite_Character.prototype.updateCharacterFrame = function() {
-        if (this._characterName === "cursor") {
-            this.setFrame(0, 0, $gameMap.tileWidth(), $gameMap.tileHeight());
-        } else {
-            py06pd.Unit.Sprite_Character_updateCharacterFrame.call(this);
-        }
     };
 
 //=============================================================================
