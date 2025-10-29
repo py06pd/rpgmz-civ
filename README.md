@@ -32,9 +32,13 @@ The order I have tested them in is:
    * Build buildings
    * Create units
    * Corruption
+   * Assign citizen
+   * Growth
  * Menu
    * Tax rate
    * Luxury rate
+   * Save
+   * Load
  * Game setup
 
 ## Todo
@@ -52,15 +56,12 @@ The order I have tested them in is:
    * Wonders
      * Effects
      * Obsolescence
-   * Yields
-     * Resource bonuses
-   * Citizen BFC assignment
+   * Tax man / scientist / entertainer management
  * Map
    * Better resource graphics
    * Fix resource / hut placement - I think something to do with mods on fractions is causing incorrect patterns, but I don't know how to fix, as from what I've read the common denominator would seem to be 4, but 4^-1 mod 16 has no solution.
    * Village gifts
    * Reveal on explore
-   * Fix first and last column tile ids
    * Better river tile graphic
    * Earth
  * Units
@@ -80,10 +81,7 @@ The order I have tested them in is:
    * Time
    * Hall of Fame
  * Menu
-   * Save
-   * Load
    * Civilopedia
-   * Luxury rate
  * Barbarians
  * Other civs AI
  * Trade technologies

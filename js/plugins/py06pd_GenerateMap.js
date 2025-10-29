@@ -141,15 +141,16 @@ Game_Map.prototype.generateMap = function(landMass, temperature, climate, age) {
     for (let z = 0; z < 2; z++) {
         for (let y = 0; y < this.height(); y++) {
             for (let x = 0; x < this.width(); x++) {
+                const end = this.width() - 1;
                 const neighbours = [
                     y > 0 ? geography[y - 1][x] : null,
-                    x < (this.width() - 1) && y > 0 ? geography[y - 1][x + 1] : null,
-                    x < (this.width() - 1) ? geography[y][x + 1] : null,
-                    x < (this.width() - 1) && y < (this.height() - 1) ? geography[y + 1][x + 1] : null,
+                    y > 0 ? geography[y - 1][x < end ? x + 1 : 0] : null,
+                    geography[y][x < end ? x + 1 : 0],
+                    y < (this.height() - 1) ? geography[y + 1][x < end ? x + 1 : 0] : null,
                     y < (this.height() - 1) ? geography[y + 1][x] : null,
-                    x > 0 && y < (this.height() - 1) ? geography[y + 1][x - 1] : null,
-                    x > 0 ? geography[y][x - 1] : null,
-                    x > 0 && y > 0 ? geography[y - 1][x - 1] : null
+                    y < (this.height() - 1) ? geography[y + 1][x > 0 ? x - 1 : end] : null,
+                    geography[y][x > 0 ? x - 1 : end],
+                    y > 0 ? geography[y - 1][x > 0 ? x - 1 : end] : null
                 ];
 
                 mapData.push(this.generatedTileId(geography[y][x], neighbours, z));
