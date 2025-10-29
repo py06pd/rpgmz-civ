@@ -58,31 +58,6 @@ py06pd.CityBuilder.TradeIcon = 75;
         return consumed;
     };
 
-    py06pd.CityBuilder.Scene_Map_endTurn = Scene_Map.prototype.endTurn;
-    Scene_Map.prototype.endTurn = function() {
-        py06pd.CityBuilder.Scene_Map_endTurn.call(this);
-        $gameMap.empires().forEach(emp => {
-            emp.cities().forEach(city => {
-                const obj = city.buildObject();
-                if (obj) {
-                    const next = city.buildProgress() + city.productionYield();
-                    if (next >= obj.construct) {
-                        if (city.buildType() === "unit") {
-                            if (py06pd.Unit) {
-                                emp.addUnit(obj.name, city.x, city.y);
-                            }
-                        } else {
-                            city.addBuilding(obj.name);
-                        }
-                        city.setBuild(null);
-                    } else {
-                        city.setBuildProgress(next);
-                    }
-                }
-            });
-        });
-    };
-
 //=============================================================================
 // Window_TileInfo
 //=============================================================================
@@ -574,7 +549,7 @@ Window_CityBFC.prototype.refresh = function() {
                 if ((x !== 0 && x !== 4) || (y !== 0 && y !== 4)) {
                     const offsetX = this._city.x + x - 2;
                     if ($gameMap.empires().some(emp => !!emp.city(offsetX, offsetY))) {
-                        this.addChild(new Sprite_City(x, y, true));
+                        this.addChild(new Sprite_City({ x, y }, true));
                     }
                     if (this._city.isWorkTile(offsetX, offsetY)) {
                         const tile = $gameMap.geography(offsetX, offsetY);
@@ -601,15 +576,18 @@ Window_CityBFC.prototype.refresh = function() {
         }
         this.addChild(new Sprite_Cursor(this));
         const y = $gameMap.tileHeight() * 5;
+        const inset = ImageManager.iconWidth + 6;
         const spaceY = ImageManager.iconHeight + 6;
         this.drawIcon(py06pd.CityBuilder.PopulationIcon, 0, y);
-        this.drawText(this._city.population(), ImageManager.iconWidth + 6, y, this.contentsWidth());
+        this.drawText(this._city.population(), inset, y, this.contentsWidth());
         this.drawIcon(py06pd.CityBuilder.FoodIcon, 0, y + spaceY);
-        this.drawText(this._city.foodYield(), ImageManager.iconWidth + 6, y + spaceY, this.contentsWidth());
+        this.drawText(this._city.foodYield(), inset, y + spaceY, this.contentsWidth());
+        const storage = this._city.foodStorage() + "/" + this._city.maxFoodStorage();
+        this.drawText(storage, inset, y + spaceY, this.contentsWidth() - inset, "right");
         this.drawIcon(py06pd.CityBuilder.ProductionIcon, 0, y + spaceY * 2);
-        this.drawText(this._city.productionYield(), ImageManager.iconWidth + 6, y + spaceY * 2, this.contentsWidth());
+        this.drawText(this._city.productionYield(), inset, y + spaceY * 2, this.contentsWidth());
         this.drawIcon(py06pd.CityBuilder.TradeIcon, 0, y + spaceY * 3);
-        this.drawText(this._city.tradeBase(), ImageManager.iconWidth + 6, y + spaceY * 3, this.contentsWidth());
+        this.drawText(this._city.tradeBase(), inset, y + spaceY * 3, this.contentsWidth());
 
     }
 };

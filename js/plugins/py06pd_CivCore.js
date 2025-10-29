@@ -92,9 +92,11 @@ Game_City.prototype.initialize = function(name, empire, x, y) {
     this._build = null;
     this._population = 1;
     this._workTiles = [{ x, y }];
+    this._foodStorage = 0;
     const tile = $gameMap.geography(x, y);
     tile.setIrrigation(true);
     tile.setRoad(true);
+    this.autoAddWorkTile();
 };
 
 Game_City.prototype.addBuilding = function(name) {
@@ -173,8 +175,43 @@ Game_City.prototype.empire = function() {
     return $gameMap.empires().find(emp => emp.name() === this._empire);
 };
 
+Game_City.prototype.endTurn = function() {
+    // construction
+    const obj = this.buildObject();
+    if (obj) {
+        const next = this._build.value + this.productionYield();
+        if (next >= obj.construct) {
+            if (this._build.type === "unit") {
+                this.empire().addUnit(obj.name, this.x, this.y);
+            } else {
+                this._buildings.push(obj.name);
+            }
+            this._build = null;
+        } else {
+            this._build.value = next;
+        }
+    }
+
+    // growth
+    const maxStorage = this.maxFoodStorage();
+    this._foodStorage += this.foodYield() - (this._population * 2);
+    if (this._foodStorage > maxStorage) {
+        this._population += 1;
+        this._foodStorage = this._foodStorage - maxStorage;
+        this.autoAddWorkTile();
+    }
+};
+
 Game_City.prototype.name = function() {
     return this._name;
+};
+
+Game_City.prototype.foodStorage = function() {
+    return this._foodStorage;
+};
+
+Game_City.prototype.maxFoodStorage = function() {
+    return (this._population + 1) * 10;
 };
 
 Game_City.prototype.foodYield = function() {
@@ -212,13 +249,37 @@ Game_City.prototype.tradeYield = function() {
     return Math.max(0, this.tradeBase() - this.corruption());
 };
 
-Game_City.prototype.tradeYield = function() {
-    const trade = 2;
-    return Math.max(0, trade - this.corruption());
-};
-
 Game_City.prototype.addWorkTile = function(x, y) {
     this._workTiles.push({ x, y });
+};
+
+Game_City.prototype.autoAddWorkTile = function() {
+    let selectX = -3;
+    let selectY = -3;
+    let current = null;
+    const gov = this.empire().government();
+    for (let y = this.y - 2; y < this.y + 3; y++) {
+        for (let x = this.x - 2; x < this.x + 3; x++) {
+            const tile = $gameMap.geography(x, y);
+            if (
+                !this._workTiles.some(t => t.x === x && t.y === y) &&
+                (!current || tile.food(gov) > current.food(gov) ||
+                    (tile.food(gov) === current.food(gov) &&
+                        tile.production(gov) > current.production(gov)) ||
+                    (tile.food(gov) === current.food(gov) &&
+                        tile.production(gov) === current.production(gov) &&
+                        tile.trade(gov) > current.trade(gov)))
+            ) {
+                current = tile;
+                selectX = x;
+                selectY = y;
+            }
+        }
+    }
+
+    if (current) {
+        this._workTiles.push({ x: selectX, y: selectY });
+    }
 };
 
 Game_City.prototype.isWorkTile = function(x, y) {
@@ -606,6 +667,25 @@ Game_Empire.prototype.empire = function() {
     return py06pd.CivData.Empires.find(emp => emp.name === this._name);
 };
 
+Game_Empire.prototype.endTurn = function() {
+    // science
+    const tech = this.learningTechnology();
+    if (tech) {
+        let science = this.science() + this.scienceYield();
+        if (science >= this.scienceCost()) {
+            science = science - this.scienceCost();
+            this.addTechnology(tech.name);
+            this.setLearningTechnology(null);
+        }
+
+        this.setScience(science);
+    }
+
+    this._cities.forEach(city => city.endTurn());
+
+    return this._name;
+};
+
 Game_Empire.prototype.government = function() {
     return this._government;
 };
@@ -636,18 +716,6 @@ Game_Empire.prototype.setTaxRate = function(rate) {
 
 Game_Empire.prototype.addTechnology = function(name) {
     this._learnedTechnologies.push(name);
-};
-
-Game_Empire.prototype.applyYield = function() {
-    let science = this.science() + this.scienceYield();
-    const tech = this.learningTechnology();
-    if (science >= this.scienceCost()) {
-        science = science - this.scienceCost();
-        this.addTechnology(tech.name);
-        this.setLearningTechnology(null);
-    }
-
-    this.setScience(science);
 };
 
 Game_Empire.prototype.learnableTechnologies = function() {
@@ -723,7 +791,7 @@ Game_Empire.prototype.units = function() {
 
 Game_Map.prototype.civSprites = function() {
     return this._empires
-        .reduce((all, emp) => all.concat(emp.cities().map(city => new Sprite_City(city.x, city.y, false))), [])
+        .reduce((all, emp) => all.concat(emp.cities().map(city => new Sprite_City(city, false))), [])
         .concat(this._empires.reduce((all, emp) => all.concat(emp.units()
             .map(unit => new Sprite_Character(unit))), []));
 };
@@ -792,40 +860,87 @@ function Sprite_City() {
 Sprite_City.prototype = Object.create(Sprite.prototype);
 Sprite_City.prototype.constructor = Sprite_City;
 
-Sprite_City.prototype.initialize = function(x, y, inMenu) {
+Sprite_City.prototype.initialize = function(city, inMenu) {
     Sprite.prototype.initialize.call(this);
     this.initMembers();
-    this._realX = x;
-    this._realY = y;
+    this._city = city;
     this._inMenu =  inMenu;
+    this._population = 0;
+    if (this._inMenu) {
+        this.redraw();
+    }
 };
 
 Sprite_City.prototype.initMembers = function() {
     this.anchor.x = 0.5;
     this.anchor.y = 1;
     this._tileId = py06pd.CivCore.TileId;
+};
+
+Sprite_City.prototype.drawCity = function() {
     const tileset = $gameMap.tileset();
     const setNumber = 5 + Math.floor(this._tileId / 256);
-    this.bitmap = ImageManager.loadTileset(tileset.tilesetNames[setNumber]);
+    const filename = Utils.encodeURI(tileset.tilesetNames[setNumber]) + ".png";
+    this.bitmap = Bitmap.load("img/tilesets/" + filename);
+};
+
+Sprite_City.prototype.drawPopulation = function(x, y, width, height) {
+    const text = this._population;
+    const textWidth = this.bitmap.measureTextWidth(text);
+    const textHeight = this.textHeight();
+    x += Math.max((width - textWidth) / 2, 0);
+    y += Math.max((height - textHeight) / 2, 0);
+    this.setupLabelFont();
+    this.bitmap.drawText(text, x, y, width, textHeight, "left");
+};
+
+Sprite_City.prototype.labelOutlineWidth = function() {
+    return 3;
+};
+
+Sprite_City.prototype.redraw = function() {
+    if (this.bitmap) {
+        this.bitmap.clear();
+    }
 
     const tileId = this._tileId;
     const pw = $gameMap.tileWidth();
     const ph = $gameMap.tileHeight();
     const sx = ((Math.floor(tileId / 128) % 2) * 8 + (tileId % 8)) * pw;
     const sy = (Math.floor((tileId % 256) / 8) % 16) * ph;
+    this.drawCity(sx, sy ,pw, ph);
+    if (!this._inMenu) {
+        this.drawPopulation(sx, sy, pw, ph);
+    }
     this.setFrame(sx, sy, pw, ph);
+};
+
+Sprite_City.prototype.setupLabelFont = function() {
+    this.bitmap.fontFace = $gameSystem.mainFontFace();
+    this.bitmap.fontSize = $gameSystem.mainFontSize() - 2;
+    this.bitmap.textColor = ColorManager.normalColor();
+    this.bitmap.outlineColor = ColorManager.outlineColor();
+    this.bitmap.outlineWidth = this.labelOutlineWidth();
+};
+
+Sprite_City.prototype.textHeight = function() {
+    return 24;
 };
 
 Sprite_City.prototype.update = function() {
     Sprite.prototype.update.call(this);
+    if (!this._inMenu && this._population !== this._city.population()) {
+        this._population = this._city.population();
+        this.redraw();
+    }
     this.updatePosition();
 };
 
 Sprite_City.prototype.updatePosition = function() {
     const tw = $gameMap.tileWidth();
     const th = $gameMap.tileHeight();
-    const realX = this._inMenu ? this._realX : $gameMap.adjustX(this._realX);
-    const realY = this._inMenu ? this._realY : $gameMap.adjustY(this._realY);
+    const realX = this._inMenu ? this._city.x : $gameMap.adjustX(this._city.x);
+    const realY = this._inMenu ? this._city.y : $gameMap.adjustY(this._city.y);
     this.x = Math.floor(realX * tw + tw / 2);
     this.y = Math.floor(realY * th + th);
     this.z = 1;

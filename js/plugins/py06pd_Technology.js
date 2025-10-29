@@ -37,12 +37,6 @@ py06pd.Technology = py06pd.Technology || {};
         }
     };
 
-    py06pd.Technology.Scene_Map_endTurn = Scene_Map.prototype.endTurn;
-    Scene_Map.prototype.endTurn = function() {
-        py06pd.Technology.Scene_Map_endTurn.call(this);
-        $gameMap.empires().forEach(emp => emp.applyYield());
-    };
-
     py06pd.Technology.Scene_Map_isAnyInputWindowActive = Scene_Map.prototype.isAnyInputWindowActive;
     Scene_Map.prototype.isAnyInputWindowActive = function() {
         return py06pd.Technology.Scene_Map_isAnyInputWindowActive.call(this) || this._selectTechnologyWindow.active ||

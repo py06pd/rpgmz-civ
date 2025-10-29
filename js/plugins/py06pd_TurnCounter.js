@@ -105,6 +105,8 @@ Scene_Map.prototype.endTurn = function() {
     if ($gameMap.turnCount() === end[$gameMap.difficulty()]) {
         SceneManager.goto(Scene_Gameover);
     }
+
+    $gameMap.empires().forEach(emp => emp.endTurn());
 };
 
 Scene_Map.prototype.isAnyInputWindowActive = function() {
