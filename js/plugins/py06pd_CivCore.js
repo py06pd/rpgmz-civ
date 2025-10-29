@@ -12,12 +12,18 @@
  *
  * Science cost and corruption from https://civfanatics.com/civ1/faq/section-d-tips-and-information/
  *
+ * Disasters from https://forums.civfanatics.com/threads/civ1-explained-city-disasters.507325/
+ *
  * @help py06pd_CivCore.js
  */
 
 var py06pd = py06pd || {};
 py06pd.CivCore = py06pd.CivCore || {};
 py06pd.CivCore.TileId = 122;
+py06pd.CivCore.vocabDemandBuilding = "Residents of {city} demand a {building}";
+py06pd.CivCore.vocabDemandLowTaxes = "Residents of {city} demand lower taxes";
+py06pd.CivCore.vocabFlipCity1 = "Residents of {city} admire the prosperity of {admired city}.";
+py06pd.CivCore.vocabFlipCity2 = "{admired civ} Empire captures {city}.";
 
 (function() {
 
@@ -90,17 +96,23 @@ Game_City.prototype.initialize = function(name, empire, x, y) {
     this._y = y;
     this._buildings = [];
     this._build = null;
-    this._population = 1;
-    this._workTiles = [{ x, y }];
     this._foodStorage = 0;
+    this._happy = 0;
+    this._population = 1;
+    this._unhappy = 0;
+    this._workTiles = [{ x, y }];
     const tile = $gameMap.geography(x, y);
     tile.setIrrigation(true);
     tile.setRoad(true);
     this.autoAddWorkTile();
 };
 
-Game_City.prototype.addBuilding = function(name) {
-    this._buildings.push(name);
+Game_City.prototype.appeal = function(x, y) {
+    if (this.x === x && this.y === y) {
+        return 0;
+    }
+
+    return (this._happy - this._unhappy) * 32 / (Math.abs(x - this.x) + Math.abs(y - this.y));
 };
 
 Game_City.prototype.buildable = function() {
@@ -139,10 +151,6 @@ Game_City.prototype.buildProgress = function() {
     return this._build ? this._build.value : 0;
 };
 
-Game_City.prototype.buildType = function() {
-    return this._build ? this._build.type : "";
-};
-
 Game_City.prototype.hasBuilt = function(name) {
     return this._buildings.includes(name);
 };
@@ -171,8 +179,129 @@ Game_City.prototype.corruption = function() {
     return corruption;
 };
 
+Game_City.prototype.triggerDisaster = function() {
+    const empire = this.empire();
+    const type = Math.randomInt(10);
+    switch (type) {
+        case 0: // earthquake
+            if (
+                this.nearBy("hill") &&
+                (this._buildings.length > 1 || (this._buildings.length > 0 && !this.hasBuilt("palace")))
+            ) {
+                while (true) {
+                    const rand = Math.randomInt(this._buildings.length);
+                    if (this._buildings[rand] !== "palace") {
+                        this._buildings.splice(this._buildings.indexOf(this._buildings[rand]), 1);
+                        break;
+                    }
+                }
+            }
+
+            break;
+        case 1: // plague
+            if (
+                !empire.learnedTechnology("medicine") && !this.hasBuilt("aqueduct") &&
+                empire.learnedTechnology("construction")
+            ) {
+                this._population = Math.ceil(this._population - this._population / 4);
+            }
+            break;
+        case 2: // flood
+            if (this.nearBy("river") && !this.hasBuilt("walls") && empire.learnedTechnology("masonry")) {
+                this._population = Math.ceil(this._population - this._population / 4);
+            }
+            break;
+        case 3: // volcano
+            if (this.nearBy("mountain") && !this.hasBuilt("temple") && empire.learnedTechnology("burial")) {
+                this._population = Math.ceil(this._population - this._population / 3);
+            }
+            break;
+        case 4: // famine
+            if (!this.hasBuilt("granary") && empire.learnedTechnology("pottery")) {
+                this._population = Math.ceil(this._population - this._population / 3);
+            }
+            break;
+        case 5: // fire
+            if (
+                !this.hasBuilt("aqueduct") && empire.learnedTechnology("construction") &&
+                (this._buildings.length > 1 || (this._buildings.length > 0 && !this.hasBuilt("palace")))
+            ) {
+                while (true) {
+                    const rand = Math.randomInt(this._buildings.length);
+                    if (this._buildings[rand] !== "palace") {
+                        this._buildings.splice(this._buildings.indexOf(this._buildings[rand]), 1);
+                        break;
+                    }
+                }
+            }
+            break;
+        case 6: // pirates
+            if (this.nearBy("ocean") && !this.hasBuilt("barracks")) {
+                this._foodStorage = 0;
+                if (this._build) {
+                    this._build.value = 0;
+                }
+            }
+            break;
+        case 7: // riot
+        case 8: // scandal
+        case 9: // corruption
+            if (this._unhappy > this._happy) {
+                this._foodStorage = 0;
+                if (this._build) {
+                    this._build.value = 0;
+                }
+
+                let demand = "temple";
+                if (this.hasBuilt("temple")) {
+                    demand = "courthouse";
+                    if (this.hasBuilt("courthouse")) {
+                        demand = "market";
+                        if (this.hasBuilt("market")) {
+                            demand = "cathedral";
+                            if (this.hasBuilt("cathedral")) {
+                                demand = "taxes";
+                            }
+                        }
+                    }
+                }
+
+                if (!this.hasBuilt("palace") && empire.cities().length > 3) {
+                    const cities = $gameMap.empires().reduce((prev, curr) => prev.concat(curr.cities()), []);
+                    let admired = null;
+                    cities.forEach(city => {
+                        const appeal = city.appeal(this.x, this.y);
+                        if (appeal > 4 && (!admired || appeal > admired[0])) {
+                            admired = [appeal, city];
+                        }
+                    });
+                    if (admired[1].empire().name() !== this._empire) {
+                        admired[1].empire().transferCity(empire, this, false);
+                        demand = null;
+                        $gameMessage.add(py06pd.CivCore.vocabFlipCity1.replace("{city}", this._name)
+                            .replace("{admired city}", admired[1].name()));
+                        $gameMessage.add(py06pd.CivCore.vocabFlipCity2.replace("{city}", this._name)
+                            .replace("{admired civ}", admired[1].empire().empire().label));
+                    }
+                }
+
+                if (demand === "taxes") {
+                    $gameMessage.add(py06pd.CivCore.vocabDemandLowTaxes);
+                } else if (demand) {
+                    const label = py06pd.CivData.Buildings.find(build => build.name === demand).label;
+                    $gameMessage.add(py06pd.CivCore.vocabDemandBuilding.replace("{building}", label));
+                }
+            }
+            break;
+    }
+};
+
 Game_City.prototype.empire = function() {
     return $gameMap.empires().find(emp => emp.name() === this._empire);
+};
+
+Game_City.prototype.setEmpire = function(name) {
+    this._empire = name;
 };
 
 Game_City.prototype.endTurn = function() {
@@ -221,6 +350,22 @@ Game_City.prototype.foodYield = function() {
 
 Game_City.prototype.goldYield = function() {
     return Math.round(this.tradeYield() * this.empire().taxRate() / 100);
+};
+
+Game_City.prototype.nearBy = function(type) {
+    if (type === "ocean" && this.nearBy("riverMouth")) {
+        return true;
+    }
+
+    for (let y = -1; y < this.y + 2; y++) {
+        for (let x = -1; x < this.x + 2; x++) {
+            if ($gameMap.geography(x, y).type() === type) {
+                return true;
+            }
+        }
+    }
+
+    return false;
 };
 
 Game_City.prototype.population = function() {
@@ -293,10 +438,6 @@ Game_City.prototype.removeWorkTile = function(x, y) {
 
 Game_City.prototype.setBuild = function(value) {
     this._build = value;
-};
-
-Game_City.prototype.setBuildProgress = function(value) {
-    this._build.value = value;
 };
 
 //=============================================================================
@@ -661,6 +802,17 @@ Game_Empire.prototype.hasCity = function(name) {
 
 Game_Empire.prototype.nextCityName = function() {
     return this.empire().cityNames.find(name => !$gameMap.empires().some(emp => emp.hasCity(name)));
+};
+
+Game_Empire.prototype.transferCity = function(original, city, remove) {
+    if (remove) {
+        this._cities.splice(this._cities.indexOf(city), 1);
+    } else {
+        original.transferCity(original, city, true);
+        city.setEmpire(this._name);
+        this._cities.push(city);
+        $gameMap.setRefreshSpriteObjects(true);
+    }
 };
 
 Game_Empire.prototype.empire = function() {

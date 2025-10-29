@@ -34,6 +34,7 @@ The order I have tested them in is:
    * Corruption
    * Assign citizen
    * Growth
+   * Disasters
  * Menu
    * Tax rate
    * Luxury rate
@@ -57,6 +58,10 @@ The order I have tested them in is:
      * Effects
      * Obsolescence
    * Tax man / scientist / entertainer management
+   * Disasters
+      * Add correct messages
+   * Happiness
+   * Pollution
  * Map
    * Better resource graphics
    * Fix resource / hut placement - I think something to do with mods on fractions is causing incorrect patterns, but I don't know how to fix, as from what I've read the common denominator would seem to be 4, but 4^-1 mod 16 has no solution.
@@ -84,12 +89,10 @@ The order I have tested them in is:
    * Civilopedia
  * Barbarians
  * Other civs AI
- * Trade technologies
+ * Diplomacy
+   * Trade technologies
  * Steal technologies
  * Move variables / data to plugin inputs
  * Government types
  * Build palace
  * Build spaceship
- * Happiness
- * Pollution
- * Volcanoes

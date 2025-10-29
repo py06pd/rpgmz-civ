@@ -107,6 +107,15 @@ Scene_Map.prototype.endTurn = function() {
     }
 
     $gameMap.empires().forEach(emp => emp.endTurn());
+
+    // trigger disaster
+    const cities = $gameMap.empires().reduce((prev, curr) => prev.concat(curr.cities()), []);
+    for (let i = 0; i < 2; i++) {
+        const rand = Math.randomInt(128);
+        if (cities[rand] && cities[rand].population() >= 5 && cities[rand].empire().cities().length > 1) {
+            cities[rand].triggerDisaster();
+        }
+    }
 };
 
 Scene_Map.prototype.isAnyInputWindowActive = function() {
