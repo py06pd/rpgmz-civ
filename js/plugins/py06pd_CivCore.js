@@ -115,6 +115,10 @@ Game_City.prototype.appeal = function(x, y) {
     return (this._happy - this._unhappy) * 32 / (Math.abs(x - this.x) + Math.abs(y - this.y));
 };
 
+Game_City.prototype.addBuilding = function(name) {
+    this._buildings.push(name);
+};
+
 Game_City.prototype.buildable = function() {
     const buildings = py06pd.CivData.Buildings.filter(build =>
         $gameMap.empire().learnedTechnology(build.requires) &&
@@ -157,7 +161,7 @@ Game_City.prototype.hasBuilt = function(name) {
 
 Game_City.prototype.corruption = function() {
     const gov = this.empire().government();
-    if (gov === "democracy") {
+    if (gov === "democracy" || (gov !== "communism" && this.hasBuilt("palace"))) {
         return 0;
     }
 
@@ -313,7 +317,7 @@ Game_City.prototype.endTurn = function() {
             if (this._build.type === "unit") {
                 this.empire().addUnit(obj.name, this.x, this.y);
             } else {
-                this._buildings.push(obj.name);
+                this.addBuilding(obj.name);
             }
             this._build = null;
         } else {
@@ -350,6 +354,12 @@ Game_City.prototype.foodYield = function() {
 
 Game_City.prototype.goldYield = function() {
     return Math.round(this.tradeYield() * this.empire().taxRate() / 100);
+};
+
+Game_City.prototype.maintenanceCosts = function() {
+    return this._buildings.map(name => py06pd.CivData.Buildings.find(build => build.name === name))
+        .filter(build => build.maintain)
+        .reduce((prev, curr) => prev + curr.maintain, 0);
 };
 
 Game_City.prototype.nearBy = function(type) {
@@ -769,6 +779,7 @@ function Game_Empire() {
 Game_Empire.prototype.initialize = function(name) {
     this._name = name;
     this._cities = [];
+    this._gold = 50;
     this._government = "despotism";
     this._leader = this.empire().leader;
     this._luxuryRate = 0;
@@ -781,6 +792,10 @@ Game_Empire.prototype.initialize = function(name) {
 
 Game_Empire.prototype.addCity = function(city) {
     this._cities.push(city);
+    if (this._cities.length === 1) {
+        city.addBuilding("palace");
+    }
+
     $gameMap.setRefreshSpriteObjects(true);
 };
 
@@ -833,9 +848,14 @@ Game_Empire.prototype.endTurn = function() {
         this.setScience(science);
     }
 
-    this._cities.forEach(city => city.endTurn());
+    // gold
+    this._gold += this._cities.reduce((sum, city) => sum + city.goldYield() - city.maintenanceCosts(), 0);
 
-    return this._name;
+    this._cities.forEach(city => city.endTurn());
+};
+
+Game_Empire.prototype.gold = function() {
+    return this._gold;
 };
 
 Game_Empire.prototype.government = function() {
@@ -906,6 +926,10 @@ Game_Empire.prototype.scienceCost = function() {
     const mod = [6, 8, 10, 12, 14];
     const timeMod = $gameMap.turnCount() > 200 ? 2 : 1;
     return this._learnedTechnologies.length * mod[$gameMap.difficulty()] * timeMod;
+};
+
+Game_Empire.prototype.scienceRate = function() {
+    return 100 - this.taxRate() - this.luxuryRate();
 };
 
 Game_Empire.prototype.setScience = function(value) {

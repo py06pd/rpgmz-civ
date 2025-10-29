@@ -12,6 +12,7 @@
 
 var py06pd = py06pd || {};
 py06pd.TurnCounter = py06pd.TurnCounter || {};
+py06pd.TurnCounter.goldIcon = 313;
 
 (function() {
 
@@ -131,9 +132,9 @@ Scene_Map.prototype.processOk = function(x, y) {
 };
 
 Scene_Map.prototype.turnCountWindowRect = function() {
-    const wh = this.calcWindowHeight(1, false);
+    const wh = this.calcWindowHeight(2, false);
     const wy = Graphics.boxHeight - wh;
-    return new Rectangle(0, wy, 128, wh);
+    return new Rectangle(0, wy, 170, wh);
 };
 
 //=============================================================================
@@ -163,31 +164,16 @@ function Window_TurnCount() {
     this.initialize(...arguments);
 }
 
-Window_TurnCount.prototype = Object.create(Window_Selectable.prototype);
+Window_TurnCount.prototype = Object.create(Window_Base.prototype);
 Window_TurnCount.prototype.constructor = Window_TurnCount;
 
 Window_TurnCount.prototype.initialize = function(rect) {
-    Window_Selectable.prototype.initialize.call(this, rect);
-    this.refresh();
+    Window_Base.prototype.initialize.call(this, rect);
+    this._turnCount = -1;
 };
 
-Window_TurnCount.prototype.colSpacing = function() {
-    return 0;
-};
-
-Window_TurnCount.prototype.maxItems = function() {
-    return 1;
-};
-
-Window_TurnCount.prototype.itemHeight = function() {
-    return Math.floor(this.innerHeight / this.maxItems());
-};
-
-Window_TurnCount.prototype.refresh = function() {
-    const rect = this.itemLineRect(0);
-    this.contents.clear();
-    this.resetFontSettings();
-    this.contents.fontSize -= 6;
+Window_TurnCount.prototype.drawYear = function() {
+    const rect = this.baseTextRect();
 
     let year = -4000;
     let index = 0;
@@ -207,10 +193,36 @@ Window_TurnCount.prototype.refresh = function() {
         index++;
     }
 
-    this.drawText(Math.abs(year) + (year >= 0 ? ' AD' : ' BC'), rect.x, rect.y, rect.width, "center");
+    this.drawText(Math.abs(year) + (year >= 0 ? ' AD' : ' BC'), rect.x, rect.y, rect.width);
 };
 
-Window_TurnCount.prototype.open = function() {
-    this.refresh();
-    Window_Selectable.prototype.open.call(this);
+Window_TurnCount.prototype.drawRates = function() {
+    const rect = this.baseTextRect();
+    const empire = $gameMap.empire();
+    this.drawText((empire.taxRate() / 10) + "." + (empire.scienceRate() / 10) + "." + (empire.luxuryRate() / 10), rect.x, rect.y, rect.width, "right");
+};
+
+Window_TurnCount.prototype.drawGold = function() {
+    const rect = this.baseTextRect();
+    const y = rect.y + this.lineHeight();
+    const empire = $gameMap.empire();
+    this.drawIcon(py06pd.TurnCounter.goldIcon, rect.x, y)
+    const offset = ImageManager.iconWidth + 6;
+    this.drawText(empire.gold(), rect.x + offset, y + (ImageManager.iconHeight - this.lineHeight()) / 2, rect.width - offset);
+};
+
+Window_TurnCount.prototype.refresh = function() {
+    this.contents.clear();
+    this.resetFontSettings();
+    this.contents.fontSize -= 6;
+    this.drawYear();
+    this.drawRates();
+    this.drawGold();
+};
+
+Window_TurnCount.prototype.update = function() {
+    if (this._turnCount !== $gameMap.turnCount()) {
+        this._turnCount = $gameMap.turnCount();
+        this.refresh();
+    }
 };

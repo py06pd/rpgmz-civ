@@ -42,7 +42,7 @@ The order I have tested them in is:
    * Load
  * Game setup
 
-## Todo
+## Todo (not comprehensive)
 
  * Game setup
    * Occasional fatal error on map generation

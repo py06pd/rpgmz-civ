@@ -664,7 +664,7 @@ Scene_Map.prototype.tileInfoWindowRect = function() {
     const wx = 0;
     const wy = this.calcWindowHeight(2, false);
     const ww = 170;
-    const wh = Graphics.boxHeight - this.calcWindowHeight(2, false) - this.calcWindowHeight(1, false);
+    const wh = Graphics.boxHeight - this.calcWindowHeight(2, false) - this.calcWindowHeight(2, false);
     return new Rectangle(wx, wy, ww, wh);
 };
 
