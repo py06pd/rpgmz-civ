@@ -28,6 +28,7 @@ The order I have tested them in is:
    * Found cities
    * Simple movement
    * Battles
+   * Work tiles
  * City
    * Build buildings
    * Create units
@@ -69,6 +70,7 @@ The order I have tested them in is:
    * Reveal on explore
    * Better river tile graphic
    * Earth
+   * City and unit colours
  * Units
    * Found cities
      * Check tile type / proximity of other cities
@@ -77,6 +79,7 @@ The order I have tested them in is:
      * Nuclear
    * Obsolescence
    * Work tiles
+     * Worked tile graphics
    * Zone of control
    * Embark units
    * Move points

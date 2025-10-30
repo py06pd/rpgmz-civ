@@ -74,6 +74,7 @@ py06pd.GenerateMap.vocab = {
     desert: "Desert",
     fish: "Fish",
     forest: "Forest",
+    fortress: "Fortress",
     game1: "Game",
     game2: "Game",
     gem: "Gems",
@@ -81,15 +82,19 @@ py06pd.GenerateMap.vocab = {
     grassland: "Grassland",
     horse: "Horses",
     hill: "Hills",
+    irrigated: "Irrigated",
     hut: "Village",
     jungle: "Jungle",
+    mine: "Mine",
     mountain: "Mountain",
     oasis: "Oasis",
     ocean: "Ocean",
     oil: "Oil",
     plains: "Plains",
+    railroad: "Railroad",
     river: "River",
     riverMouth: "Ocean",
+    road: "Road",
     seal: "Seal",
     shield: "Shield",
     swamp: "Swamp",
@@ -683,6 +688,7 @@ Window_TileInfo.prototype.initialize = function(rect) {
     Window_Base.prototype.initialize.call(this, rect);
     this._x = -1;
     this._y = -1;
+    this._progress = "";
 };
 
 Window_TileInfo.prototype.refresh = function() {
@@ -708,13 +714,42 @@ Window_TileInfo.prototype.drawTileInfo = function(x, y, width) {
         this.drawText(py06pd.GenerateMap.vocab.hut, x, y + (this.lineHeight() * this._lines), width);
         this._lines++;
     }
+
+    const progress = [
+        [py06pd.GenerateMap.vocab.fortress, tile.fortress()],
+        [py06pd.GenerateMap.vocab.irrigated, tile.irrigation()],
+        [py06pd.GenerateMap.vocab.mine, tile.mine()],
+        [py06pd.GenerateMap.vocab.road, tile.road()],
+        [py06pd.GenerateMap.vocab.railroad, tile.railroad()],
+    ];
+
+    progress.forEach(row => {
+        if (row[1] > 0) {
+            const text = row[1].toString() + "%"
+            if (row[1] < 100) {
+                this.drawText(row[0], x, y + (this.lineHeight() * this._lines), width - 6 - this.textWidth(text));
+                this.drawText(text, x, y + (this.lineHeight() * this._lines), width, "right");
+            } else {
+                this.drawText(row[0], x, y + (this.lineHeight() * this._lines), width);
+            }
+            this._lines++;
+        }
+    });
 };
 
 Window_TileInfo.prototype.update = function() {
     Window_Base.prototype.update.call(this);
-    if ($gamePlayer.x !== this._x || $gamePlayer.y !== this._y) {
+
+    let progress = "";
+    if (this._x >= 0) {
+        const tile = $gameMap.geography(this._x, this._y);
+        progress = tile.fortress() + "|" + tile.irrigation() + "|" + tile.mine() + "|" + tile.road() + "|" +
+            tile.railroad();
+    }
+    if ($gamePlayer.x !== this._x || $gamePlayer.y !== this._y || this._progress !== progress) {
         this._x = $gamePlayer.x;
         this._y = $gamePlayer.y;
+        this._progress = progress;
         this.refresh();
     }
 };

@@ -102,8 +102,8 @@ Game_City.prototype.initialize = function(name, empire, x, y) {
     this._unhappy = 0;
     this._workTiles = [{ x, y }];
     const tile = $gameMap.geography(x, y);
-    tile.setIrrigation(true);
-    tile.setRoad(true);
+    tile.setIrrigation(100);
+    tile.setRoad(100);
     this.autoAddWorkTile();
 };
 
@@ -460,12 +460,12 @@ function Game_CivTile() {
 
 Game_CivTile.prototype.initialize = function(type) {
     this._type = type;
-    this._fortress = false;
+    this._fortress = 0;
     this._hut = false;
-    this._irrigation = false;
-    this._mine = false;
-    this._railroad = false;
-    this._road = false;
+    this._irrigation = 0;
+    this._mine = 0;
+    this._railroad = 0;
+    this._road = 0;
     this._resource = "";
 };
 
@@ -473,13 +473,17 @@ Game_CivTile.prototype.canStartOn = function() {
     return ["grassland", "plains", "river"].includes(this._type);
 };
 
+Game_CivTile.prototype.data = function() {
+    return py06pd.CivData.Tiles[this._type];
+};
+
 Game_CivTile.prototype.defence = function() {
-    return py06pd.CivData.Tiles[this._type].defence;
+    return this.data().defence;
 };
 
 Game_CivTile.prototype.food = function(government) {
-    let food = py06pd.CivData.Tiles[this._type].food;
-    if (["desert", "grassland", "hill", "plains", "river"].includes(this._type) && this._irrigation) {
+    let food = this.data().food;
+    if (["desert", "grassland", "hill", "plains", "river"].includes(this._type) && this._irrigation === 100) {
         food += 1;
         if (["grassland", "river"].includes(this._type) && ["anarchy", "despotism"].includes(government)) {
             food -= 1;
@@ -500,7 +504,7 @@ Game_CivTile.prototype.food = function(government) {
         }
     }
 
-    if (this._railroad) {
+    if (this._railroad === 100) {
         food = Math.floor(food * 1.5);
     }
 
@@ -511,6 +515,10 @@ Game_CivTile.prototype.fortress = function() {
     return this._fortress;
 };
 
+Game_CivTile.prototype.setFortress = function(value) {
+    this._fortress = Math.min(value, 100);
+};
+
 Game_CivTile.prototype.hut = function() {
     return this._hut;
 };
@@ -519,13 +527,25 @@ Game_CivTile.prototype.setHut = function(value) {
     this._hut = value;
 };
 
+Game_CivTile.prototype.irrigation = function() {
+    return this._irrigation;
+};
+
 Game_CivTile.prototype.setIrrigation = function(value) {
-    this._irrigation = value;
+    this._irrigation = Math.min(value, 100);
+};
+
+Game_CivTile.prototype.mine = function() {
+    return this._mine;
+};
+
+Game_CivTile.prototype.setMine = function(value) {
+    this._mine = Math.min(value, 100);
 };
 
 Game_CivTile.prototype.production = function(government) {
-    let production = py06pd.CivData.Tiles[this._type].production;
-    if (this._mine) {
+    let production = this.data().production;
+    if (this._mine === 100) {
         if (["desert", "mountain"].includes(this._type)) {
             production += 1;
         }
@@ -551,11 +571,19 @@ Game_CivTile.prototype.production = function(government) {
         }
     }
 
-    if (this._railroad) {
+    if (this._railroad === 100) {
         production = Math.floor(production * 1.5);
     }
 
     return production;
+};
+
+Game_CivTile.prototype.railroad = function() {
+    return this._railroad;
+};
+
+Game_CivTile.prototype.setRailroad = function(value) {
+    this._railroad = Math.min(value, 100);
 };
 
 Game_CivTile.prototype.resource = function() {
@@ -563,16 +591,20 @@ Game_CivTile.prototype.resource = function() {
 };
 
 Game_CivTile.prototype.setResource = function(value) {
-    this._resource = value ? py06pd.CivData.Tiles[this._type].resource : '';
+    this._resource = value ? this.data().resource : '';
+};
+
+Game_CivTile.prototype.road = function() {
+    return this._road;
 };
 
 Game_CivTile.prototype.setRoad = function(value) {
-    this._road = value;
+    this._road = Math.min(value, 100);
 };
 
 Game_CivTile.prototype.trade = function(government) {
-    let trade = py06pd.CivData.Tiles[this._type].trade;
-    if (this._road) {
+    let trade = this.data().trade;
+    if (this._road === 100) {
         if (["desert", "grassland", "plains"].includes(this._type)) {
             trade += 1;
         }
@@ -595,7 +627,7 @@ Game_CivTile.prototype.trade = function(government) {
         trade += 1;
     }
 
-    if (this._railroad) {
+    if (this._railroad === 100) {
         trade = Math.floor(trade * 1.5);
     }
 
@@ -604,6 +636,10 @@ Game_CivTile.prototype.trade = function(government) {
 
 Game_CivTile.prototype.type = function() {
     return this._type;
+};
+
+Game_CivTile.prototype.setType = function(type) {
+    this._type = type;
 };
 
 //=============================================================================
@@ -623,7 +659,9 @@ Game_CivUnit.prototype.initialize = function(name, empire) {
     this._empire = empire;
     this._fortified = false;
     this._moved = false;
+    this._sentry = false;
     this._veteran = 0;
+    this._workType = "";
     const unit = this.unit();
     this._movePoints = unit.move;
     this.setImage(unit.characterName, unit.characterIndex);
@@ -673,6 +711,55 @@ Game_CivUnit.prototype.canBuildCity = function() {
     return this.unit().buildCity;
 };
 
+Game_CivUnit.prototype.canBuildFortress = function() {
+    const tile = $gameMap.geography(this.x, this.y);
+    return this.unit().buildFortresses && tile.fortress() !== 100;
+};
+
+Game_CivUnit.prototype.canBuildRailroad = function() {
+    const tile = $gameMap.geography(this.x, this.y);
+    return this.unit().buildRoads && tile.road() === 100 && tile.railroad() !== 100 &&
+        this.empire().learnedTechnology("railroad");
+};
+
+Game_CivUnit.prototype.canBuildRoad = function() {
+    const tile = $gameMap.geography(this.x, this.y);
+    return this.unit().buildRoads && tile.road() !== 100;
+};
+
+Game_CivUnit.prototype.canClearForest = function() {
+    return this.unit().buildIrrigation &&
+        $gameMap.geography(this.x, this.y).type() === "forest";
+};
+
+Game_CivUnit.prototype.canClearJungle = function() {
+    return this.unit().buildIrrigation &&
+        $gameMap.geography(this.x, this.y).type() === "jungle";
+};
+
+Game_CivUnit.prototype.canDrainSwamp = function() {
+    return this.unit().buildIrrigation &&
+        $gameMap.geography(this.x, this.y).type() === "swamp";
+};
+
+Game_CivUnit.prototype.canForest = function() {
+    const tile = $gameMap.geography(this.x, this.y);
+    return this.unit().buildMines &&
+        ["grassland", "jungle", "plains", "swamp"].includes(tile.type());
+};
+
+Game_CivUnit.prototype.canIrrigate = function() {
+    const tile = $gameMap.geography(this.x, this.y);
+    return this.unit().buildIrrigation && tile.irrigation() !== 100 &&
+        ["desert", "grassland", "hill", "plains", "river"].includes(tile.type());
+};
+
+Game_CivUnit.prototype.canMine = function() {
+    const tile = $gameMap.geography(this.x, this.y);
+    return this.unit().buildMines && tile.mine() !== 100 &&
+        ["desert", "hill", "mountain"].includes(tile.type());
+};
+
 Game_CivUnit.prototype.defence = function(attacker) {
     const tile = $gameMap.geography(this.x, this.y);
     const unit = this.unit();
@@ -690,7 +777,7 @@ Game_CivUnit.prototype.defence = function(attacker) {
         if (unit.sea || unit.air) {
             value = value * 8;
         } else {
-            if (tile.fortress()) {
+            if (tile.fortress() === 100) {
                 value = value * 8;
             } else if (this._fortified) {
                 value = value * 6;
@@ -714,6 +801,17 @@ Game_CivUnit.prototype.city = function() {
 
 Game_CivUnit.prototype.empire = function() {
     return $gameMap.empires().find(emp => emp.name() === this._empire);
+};
+
+Game_CivUnit.prototype.endTurn = function() {
+    this._moved = false;
+    if (this._workType !== "") {
+        this.work();
+    }
+};
+
+Game_CivUnit.prototype.setFortified = function(value) {
+    this._fortified = value;
 };
 
 Game_CivUnit.prototype.unit = function() {
@@ -742,8 +840,8 @@ Game_CivUnit.prototype.moved = function() {
     return this._moved;
 };
 
-Game_CivUnit.prototype.setMoved = function(moved) {
-    this._moved = moved;
+Game_CivUnit.prototype.setSentry = function(value) {
+    this._sentry = value;
 };
 
 Game_CivUnit.prototype.update = function(sceneActive) {
@@ -752,6 +850,7 @@ Game_CivUnit.prototype.update = function(sceneActive) {
         this.moveByInput();
         if (this.isMoving()) {
             this._moved = true;
+            this._workType = "";
         }
     }
     Game_Character.prototype.update.call(this);
@@ -766,6 +865,82 @@ Game_CivUnit.prototype.veteran = function() {
 
 Game_CivUnit.prototype.setVeteran = function(value) {
     this._veteran = value;
+};
+
+Game_CivUnit.prototype.work = function() {
+    const tile = $gameMap.geography(this.x, this.y);
+    if (this._workType === "clearForest") {
+        tile.setIrrigation(tile.irrigation() + 10);
+        if (tile.irrigation() === 100) {
+            tile.setIrrigation(0);
+            tile.setType("plains");
+            this._workType = "";
+        }
+    }
+    if (["clearJungle", "drainSwamp"].includes(this._workType)) {
+        tile.setIrrigation(tile.irrigation() + 7);
+        if (tile.irrigation() === 100) {
+            tile.setIrrigation(0);
+            tile.setMine(0);
+            tile.setType("grassland");
+            this._workType = "";
+        }
+    }
+    if (this._workType === "forest") {
+        if (tile.type() === "grassland") {
+            tile.setMine(tile.mine() + 10);
+        } else {
+            tile.setMine(tile.mine() + 7);
+        }
+        if (tile.mine() === 100) {
+            tile.setIrrigation(0);
+            tile.setMine(0);
+            tile.setType("forest");
+            this._workType = "";
+        }
+    }
+    if (this._workType === "fortress") {
+        tile.setFortress(tile.fortress() + tile.data().fortress);
+        if (tile.fortress() === 100) {
+            this._workType = "";
+        }
+    }
+    if (this._workType === "irrigate") {
+        if (tile.type() === "hill") {
+            tile.setIrrigation(tile.irrigation() + 10);
+        } else {
+            tile.setIrrigation(tile.irrigation() + 20);
+        }
+        if (tile.irrigation() === 100) {
+            this._workType = "";
+        }
+    }
+    if (this._workType === "mine") {
+        if (tile.type() === "desert") {
+            tile.setMine(tile.mine() + 20);
+        } else {
+            tile.setMine(tile.mine() + 10);
+        }
+        if (tile.mine() === 100) {
+            this._workType = "";
+        }
+    }
+    if (this._workType === "road") {
+        tile.setRoad(tile.road() + tile.data().road);
+        if (tile.road() === 100) {
+            this._workType = "";
+        }
+    }
+    if (this._workType === "railroad") {
+        tile.setRailroad(tile.railroad() + tile.data().road / 2);
+        if (tile.railroad() === 100) {
+            this._workType = "";
+        }
+    }
+};
+
+Game_CivUnit.prototype.setWorkType = function(type) {
+    this._workType = type;
 };
 
 //=============================================================================
@@ -852,6 +1027,8 @@ Game_Empire.prototype.endTurn = function() {
     this._gold += this._cities.reduce((sum, city) => sum + city.goldYield() - city.maintenanceCosts(), 0);
 
     this._cities.forEach(city => city.endTurn());
+
+    this._units.forEach(unit => unit.endTurn());
 };
 
 Game_Empire.prototype.gold = function() {

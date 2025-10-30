@@ -239,19 +239,19 @@ py06pd.CivData.Technologies = [
 ];
 
 py06pd.CivData.Tiles = {
-    arctic: { defence: 2, food: 0, moveCost: 2, production: 0, resource: "seal", trade: 0, resourceFood: 2, resourceProduction: 0, resourceTrade: 0 },
-    desert: { defence: 2, food: 0, moveCost: 1, production: 1, resource: "oasis", trade: 0, resourceFood: 3, resourceProduction: 0, resourceTrade: 0 },
-    forest: { defence: 3, food: 1, moveCost: 2, production: 2, resource: "game1", trade: 0, resourceFood: 2, resourceProduction: 0, resourceTrade: 0 },
-    grassland: { defence: 2, food: 2, moveCost: 1, production: 0, resource: "shield", trade: 0, resourceFood: 0, resourceProduction: 1, resourceTrade: 0 },
-    hill: { defence: 4, food: 1, moveCost: 2, production: 0, resource: "coal", trade: 0, resourceFood: 0, resourceProduction: 2, resourceTrade: 0 },
-    jungle: { defence: 3, food: 1, moveCost: 2, production: 0, resource: "gem", trade: 0, resourceFood: 0, resourceProduction: 0, resourceTrade: 4 },
-    mountain: { defence: 6, food: 0, moveCost: 3, production: 1, resource: "gold", trade: 0, resourceFood: 0, resourceProduction: 0, resourceTrade: 6 },
-    ocean: { defence: 2, food: 1, moveCost: 1, production: 0, resource: "fish", trade: 0, resourceFood: 2, resourceProduction: 0, resourceTrade: 0 },
-    plains: { defence: 2, food: 1, moveCost: 1, production: 1, resource: "horse", trade: 0, resourceFood: 0, resourceProduction: 2, resourceTrade: 0 },
-    river: { defence: 3, food: 2, moveCost: 1, production: 0, resource: "shield", trade: 0, resourceFood: 0, resourceProduction: 1, resourceTrade: 0 },
-    riverMouth: { defence: 2, food: 1, moveCost: 1, production: 0, resource: "fish", trade: 0, resourceFood: 2, resourceProduction: 0, resourceTrade: 0 },
-    swamp: { defence: 3, food: ``, moveCost: 2, production: 0, resource: "oil", trade: 0 , resourceFood: 0, resourceProduction: 4, resourceTrade: 0 },
-    tundra: { defence: 2, food: 1, moveCost: 1, production: 0, resource: "game2", trade: 0, resourceFood: 3, resourceProduction: 0, resourceTrade: 0 }
+    arctic: { defence: 2, food: 0, fortress: 17, moveCost: 2, production: 0, resource: "seal", road: 25, trade: 0, resourceFood: 2, resourceProduction: 0, resourceTrade: 0 },
+    desert: { defence: 2, food: 0, fortress: 20, moveCost: 1, production: 1, resource: "oasis", road: 50, trade: 0, resourceFood: 3, resourceProduction: 0, resourceTrade: 0 },
+    forest: { defence: 3, food: 1, fortress: 17, moveCost: 2, production: 2, resource: "game1", road: 25, trade: 0, resourceFood: 2, resourceProduction: 0, resourceTrade: 0 },
+    grassland: { defence: 2, food: 2, fortress: 20, moveCost: 1, production: 0, resource: "shield", road: 50, trade: 0, resourceFood: 0, resourceProduction: 1, resourceTrade: 0 },
+    hill: { defence: 4, food: 1, fortress: 17, moveCost: 2, production: 0, resource: "coal", road: 25, trade: 0, resourceFood: 0, resourceProduction: 2, resourceTrade: 0 },
+    jungle: { defence: 3, food: 1, fortress: 17, moveCost: 2, production: 0, resource: "gem", road: 25, trade: 0, resourceFood: 0, resourceProduction: 0, resourceTrade: 4 },
+    mountain: { defence: 6, food: 0, fortress: 15, moveCost: 3, production: 1, resource: "gold", road: 17, trade: 0, resourceFood: 0, resourceProduction: 0, resourceTrade: 6 },
+    ocean: { defence: 2, food: 1, fortress: 20, moveCost: 1, production: 0, resource: "fish", road: 25, trade: 0, resourceFood: 2, resourceProduction: 0, resourceTrade: 0 },
+    plains: { defence: 2, food: 1, fortress: 20, moveCost: 1, production: 1, resource: "horse", road: 25, trade: 0, resourceFood: 0, resourceProduction: 2, resourceTrade: 0 },
+    river: { defence: 3, food: 2, fortress: 20, moveCost: 1, production: 0, resource: "shield", road: 25, trade: 0, resourceFood: 0, resourceProduction: 1, resourceTrade: 0 },
+    riverMouth: { defence: 2, food: 1, fortress: 20, moveCost: 1, production: 0, resource: "fish", road: 25, trade: 0, resourceFood: 2, resourceProduction: 0, resourceTrade: 0 },
+    swamp: { defence: 3, food: 1, fortress: 17, moveCost: 2, production: 0, resource: "oil", road: 25, trade: 0 , resourceFood: 0, resourceProduction: 4, resourceTrade: 0 },
+    tundra: { defence: 2, food: 1, fortress: 20, moveCost: 1, production: 0, resource: "game2", road: 50, trade: 0, resourceFood: 3, resourceProduction: 0, resourceTrade: 0 }
 };
 
 py06pd.CivData.Units = [

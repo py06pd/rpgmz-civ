@@ -16,6 +16,18 @@ var py06pd = py06pd || {};
 py06pd.Unit = py06pd.Unit || {};
 
 py06pd.Unit.vocabBuildCity = "Build City";
+py06pd.Unit.vocabBuildRailroad = "Build Railroad";
+py06pd.Unit.vocabBuildRoad = "Build Road";
+py06pd.Unit.vocabClearForest = "Clear Forest";
+py06pd.Unit.vocabClearJungle = "Clear Jungle";
+py06pd.Unit.vocabDisband = "Disband";
+py06pd.Unit.vocabDrainSwamp = "Drain Swamp";
+py06pd.Unit.vocabForest = "Plant Forest";
+py06pd.Unit.vocabFortify = "Fortify";
+py06pd.Unit.vocabFortress = "Build Fortress";
+py06pd.Unit.vocabIrrigate = "Irrigate";
+py06pd.Unit.vocabMine = "Mine";
+py06pd.Unit.vocabSentry = "Sentry";
 py06pd.Unit.vocabWait = "Wait";
 
 (function() {
@@ -79,15 +91,6 @@ py06pd.Unit.vocabWait = "Wait";
                 this.clearUnit();
             }
         }
-    };
-
-    py06pd.Unit.Scene_Map_endTurn = Scene_Map.prototype.endTurn;
-    Scene_Map.prototype.endTurn = function() {
-        py06pd.Unit.Scene_Map_endTurn.call(this);
-
-        $gameMap.empire().units().forEach(unit => {
-            unit.setMoved(false);
-        });
     };
 
     py06pd.Unit.Scene_Map_isAnyInputWindowActive = Scene_Map.prototype.isAnyInputWindowActive;
@@ -185,7 +188,19 @@ Scene_Map.prototype.createUnitCommandWindow = function() {
     const rect = this.unitCommandWindowRect();
     const commandWindow = new Window_UnitCommand(rect);
     commandWindow.y = Graphics.boxHeight - commandWindow.height;
-    commandWindow.setHandler("buildCity", this.commandBuildCity.bind(this));
+    commandWindow.setHandler("city", this.commandCity.bind(this));
+    commandWindow.setHandler("irrigate", this.commandIrrigate.bind(this));
+    commandWindow.setHandler("mine", this.commandMine.bind(this));
+    commandWindow.setHandler("forest", this.commandForest.bind(this));
+    commandWindow.setHandler("fortress", this.commandFortress.bind(this));
+    commandWindow.setHandler("road", this.commandRoad.bind(this));
+    commandWindow.setHandler("railroad", this.commandRailroad.bind(this));
+    commandWindow.setHandler("clearForest", this.commandClearForest.bind(this));
+    commandWindow.setHandler("clearJungle", this.commandClearJungle.bind(this));
+    commandWindow.setHandler("drainSwamp", this.commandDrainSwamp.bind(this));
+    commandWindow.setHandler("sentry", this.commandSentry.bind(this));
+    commandWindow.setHandler("disband", this.commandDisband.bind(this));
+    commandWindow.setHandler("fortify", this.commandFortify.bind(this));
     commandWindow.setHandler("wait", this.commandWait.bind(this));
     this.addWindow(commandWindow);
     this._unitCommandWindow = commandWindow;
@@ -205,7 +220,7 @@ Scene_Map.prototype.clearUnit = function() {
     $gamePlayer.setTransparent(false);
 };
 
-Scene_Map.prototype.commandBuildCity = function() {
+Scene_Map.prototype.commandCity = function() {
     if (py06pd.GenerateMap) {
         this._tileWindow.close();
     }
@@ -219,6 +234,78 @@ Scene_Map.prototype.commandBuildCity = function() {
     this._cityEditWindow.setup($gameMap.empire().nextCityName(), 12);
     this._cityNameInputWindow.open();
     this._cityNameInputWindow.activate();
+};
+
+Scene_Map.prototype.commandClearForest = function() {
+    this._selectedUnit.setWorkType("clearForest");
+    this.clearUnit();
+    this._unitCommandWindow.close();
+};
+
+Scene_Map.prototype.commandClearJungle = function() {
+    this._selectedUnit.setWorkType("clearJungle");
+    this.clearUnit();
+    this._unitCommandWindow.close();
+};
+
+Scene_Map.prototype.commandDisband = function() {
+    this._selectedUnit.empire().removeUnit(this._selectedUnit);
+    this.clearUnit();
+    this._unitCommandWindow.close();
+};
+
+Scene_Map.prototype.commandDrainSwamp = function() {
+    this._selectedUnit.setWorkType("drainSwamp");
+    this.clearUnit();
+    this._unitCommandWindow.close();
+};
+
+Scene_Map.prototype.commandForest = function() {
+    this._selectedUnit.setWorkType("forest");
+    this.clearUnit();
+    this._unitCommandWindow.close();
+};
+
+Scene_Map.prototype.commandFortify = function() {
+    this._selectedUnit.setFortified(true);
+    this.clearUnit();
+    this._unitCommandWindow.close();
+};
+
+Scene_Map.prototype.commandFortress = function() {
+    this._selectedUnit.setWorkType("fortress");
+    this.clearUnit();
+    this._unitCommandWindow.close();
+};
+
+Scene_Map.prototype.commandIrrigate = function() {
+    this._selectedUnit.setWorkType("irrigate");
+    this.clearUnit();
+    this._unitCommandWindow.close();
+};
+
+Scene_Map.prototype.commandMine = function() {
+    this._selectedUnit.setWorkType("mine");
+    this.clearUnit();
+    this._unitCommandWindow.close();
+};
+
+Scene_Map.prototype.commandRailroad = function() {
+    this._selectedUnit.setWorkType("railroad");
+    this.clearUnit();
+    this._unitCommandWindow.close();
+};
+
+Scene_Map.prototype.commandRoad = function() {
+    this._selectedUnit.setWorkType("road");
+    this.clearUnit();
+    this._unitCommandWindow.close();
+};
+
+Scene_Map.prototype.commandSentry = function() {
+    this._selectedUnit.setSentry(true);
+    this.clearUnit();
+    this._unitCommandWindow.close();
 };
 
 Scene_Map.prototype.commandWait = function() {
@@ -344,15 +431,94 @@ Window_UnitCommand.prototype.makeCommandList = function() {
         if (this._unit.canBuildCity()) {
             this.addBuildCityCommand();
         }
-        this.addWaitCommands();
+        if (this._unit.canClearForest()) {
+            this.addClearForestCommand();
+        }
+        if (this._unit.canClearJungle()) {
+            this.addClearJungleCommand();
+        }
+        if (this._unit.canDrainSwamp()) {
+            this.addDrainSwampCommand();
+        }
+        if (this._unit.canIrrigate()) {
+            this.addIrrigateCommand();
+        }
+        if (this._unit.canMine()) {
+            this.addMineCommand();
+        }
+        if (this._unit.canBuildFortress()) {
+            this.addFortressCommand();
+        } else if (this._unit.unit().name !== "settler") {
+            this.addFortifyCommand();
+        }
+        if (this._unit.canForest()) {
+            this.addForestCommand();
+        }
+        if (this._unit.canBuildRoad()) {
+            this.addBuildRoadCommand();
+        }
+        if (this._unit.canBuildRailroad()) {
+            this.addBuildRailroadCommand();
+        }
+        this.addSentryCommand();
+        this.addDisbandCommand();
+        this.addWaitCommand();
     }
 };
 
 Window_UnitCommand.prototype.addBuildCityCommand = function() {
-    this.addCommand(py06pd.Unit.vocabBuildCity, "buildCity", true);
+    this.addCommand(py06pd.Unit.vocabBuildCity, "city", true);
 };
 
-Window_UnitCommand.prototype.addWaitCommands = function() {
+Window_UnitCommand.prototype.addBuildRailroadCommand = function() {
+    this.addCommand(py06pd.Unit.vocabBuildRailroad, "railroad", true);
+};
+
+Window_UnitCommand.prototype.addBuildRoadCommand = function() {
+    this.addCommand(py06pd.Unit.vocabBuildRoad, "road", true);
+};
+
+Window_UnitCommand.prototype.addClearForestCommand = function() {
+    this.addCommand(py06pd.Unit.vocabClearForest, "clearForest", true);
+};
+
+Window_UnitCommand.prototype.addClearJungleCommand = function() {
+    this.addCommand(py06pd.Unit.vocabClearJungle, "clearJungle", true);
+};
+
+Window_UnitCommand.prototype.addDisbandCommand = function() {
+    this.addCommand(py06pd.Unit.vocabDisband, "disband", true);
+};
+
+Window_UnitCommand.prototype.addDrainSwampCommand = function() {
+    this.addCommand(py06pd.Unit.vocabDrainSwamp, "drainSwamp", true);
+};
+
+Window_UnitCommand.prototype.addForestCommand = function() {
+    this.addCommand(py06pd.Unit.vocabForest, "forest", true);
+};
+
+Window_UnitCommand.prototype.addFortifyCommand = function() {
+    this.addCommand(py06pd.Unit.vocabFortify, "fortify", true);
+};
+
+Window_UnitCommand.prototype.addFortressCommand = function() {
+    this.addCommand(py06pd.Unit.vocabFortress, "fortress", true);
+};
+
+Window_UnitCommand.prototype.addIrrigateCommand = function() {
+    this.addCommand(py06pd.Unit.vocabIrrigate, "irrigate", true);
+};
+
+Window_UnitCommand.prototype.addMineCommand = function() {
+    this.addCommand(py06pd.Unit.vocabMine, "mine", true);
+};
+
+Window_UnitCommand.prototype.addSentryCommand = function() {
+    this.addCommand(py06pd.Unit.vocabSentry, "sentry", true);
+};
+
+Window_UnitCommand.prototype.addWaitCommand = function() {
     this.addCommand(py06pd.Unit.vocabWait, "wait", true);
 };
 
