@@ -30,8 +30,9 @@ The order I have tested them in is:
    * Battles
    * Work tiles
  * City
-   * Build buildings
-   * Create units
+   * Build buildings / units
+     * Buy
+     * Sell
    * Corruption
    * Assign citizen
    * Growth
@@ -53,8 +54,6 @@ The order I have tested them in is:
    * Buildings
      * Effects
      * Obsolescence
-     * Buy
-     * Sell
    * Wonders
      * Effects
      * Obsolescence

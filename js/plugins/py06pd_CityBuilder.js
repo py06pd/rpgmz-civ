@@ -18,8 +18,11 @@ py06pd.CityBuilder.ProductionIcon = 223;
 py06pd.CityBuilder.TradeIcon = 75;
 py06pd.CityBuilder.vocabBuild = "Build";
 py06pd.CityBuilder.vocabBuilt = "Built";
+py06pd.CityBuilder.vocabBuy = "Buy";
+py06pd.CityBuilder.vocabChange = "Change";
 py06pd.CityBuilder.vocabManage = "Manage";
 py06pd.CityBuilder.vocabSell = "Sell";
+py06pd.CityBuilder.vocabTurnsLeft = "{turns} turns";
 
 (function() {
 
@@ -99,6 +102,7 @@ Scene_City.prototype.create = function() {
     this.createBuiltWindow();
     this.createBuildingsWindow();
     this.createBuildWindow();
+    this.createBuyWindow();
     this.createSellWindow();
     this.refreshActor();
 };
@@ -210,8 +214,26 @@ Scene_City.prototype.createBuiltWindow = function() {
     const rect = this.buildingsWindowRect();
     this._builtWindow = new Window_CityBuilt(rect);
     this._builtWindow.setHandler("ok", this.onBuiltOk.bind(this));
-    this._builtWindow.setHandler("cancel", this.onBuildCancel.bind(this));
+    this._builtWindow.setHandler("cancel", this.onBuiltCancel.bind(this));
     this.addWindow(this._builtWindow);
+};
+
+Scene_City.prototype.createBuyWindow = function() {
+    const rect = this.buyWindowRect();
+    this._buyWindow = new Window_CityBuy(rect);
+    this._buyWindow.hide();
+    this._buyWindow.setHandler("ok", this.onBuyOk.bind(this));
+    this._buyWindow.setHandler("cancel", this.onBuyCancel.bind(this));
+    this.addWindow(this._buyWindow);
+};
+
+Scene_City.prototype.buyWindowRect = function() {
+    const buildingsWindowRect = this.buildingsWindowRect();
+    const ww = buildingsWindowRect.width;
+    const wh = this.calcWindowHeight(2, true);
+    const wx = buildingsWindowRect.x;
+    const wy = Graphics.boxHeight - wh;
+    return new Rectangle(wx, wy, ww, wh);
 };
 
 Scene_City.prototype.createSellWindow = function() {
@@ -244,6 +266,7 @@ Scene_City.prototype.refreshActor = function() {
     this._buildingsWindow.setCity(city);
     this._buildWindow.setCity(city);
     this._builtWindow.setCity(city);
+    this._buyWindow.setCity(city);
 };
 
 Scene_City.prototype.commandManage = function() {
@@ -252,10 +275,17 @@ Scene_City.prototype.commandManage = function() {
 };
 
 Scene_City.prototype.commandBuild = function() {
-    this._buildingsWindow.activate();
-    this._buildingsWindow.select(0);
-    this._buildingsWindow.show();
-    this._builtWindow.hide();
+    const city = $gameMap.empire().cities()[this._index];
+    if (city.canBuy()) {
+        this._buyWindow.show();
+        this._buyWindow.activate();
+        this._buyWindow.select(0);
+    } else {
+        this._buildingsWindow.activate();
+        this._buildingsWindow.select(0);
+        this._buildingsWindow.show();
+        this._builtWindow.hide();
+    }
 };
 
 Scene_City.prototype.commandBuilt = function() {
@@ -283,11 +313,10 @@ Scene_City.prototype.onBuildOk = function() {
     const build = this._buildingsWindow.item();
     $gameMap.empire().cities()[this._index].setBuild({ type: build.characterIndex ? 'unit' : 'building', name: build.name, value: 0 })
     this._buildWindow.refresh();
-    this._buildingsWindow.activate();
-};
-
-Scene_City.prototype.onBuiltOk = function() {
-    this._sellWindow.setup(this._builtWindow.item().sell);
+    this._buildingsWindow.hide();
+    this._builtWindow.show();
+    this._buyWindow.refresh();
+    this._commandWindow.activate();
 };
 
 Scene_City.prototype.onBuildCancel = function() {
@@ -297,13 +326,54 @@ Scene_City.prototype.onBuildCancel = function() {
     this._builtWindow.deactivate();
     this._builtWindow.deselect();
     this._builtWindow.show();
+
+    const city = $gameMap.empire().cities()[this._index];
+    if (city.canBuy()) {
+        this._buyWindow.show();
+        this._buyWindow.activate();
+        this._buyWindow.select(0);
+    } else {
+        this._commandWindow.activate();
+    }
+};
+
+Scene_City.prototype.onBuiltOk = function() {
+    this._sellWindow.setup(this._builtWindow.item().construct);
+};
+
+Scene_City.prototype.onBuiltCancel = function() {
+    this._commandWindow.activate();
+};
+
+Scene_City.prototype.onBuyOk = function() {
+    if (this._buyWindow.index() === 0) {
+        this._buildingsWindow.activate();
+        this._buildingsWindow.select(0);
+        this._buildingsWindow.show();
+        this._builtWindow.hide();
+        this._buyWindow.hide();
+    } else {
+        const city = $gameMap.empire().cities()[this._index];
+        $gameMap.empire().addGold(-city.buyPrice());
+        city.completeBuild();
+        this._buildWindow.refresh();
+        this._buildingsWindow.refresh();
+        this._builtWindow.refresh();
+        this.onBuyCancel();
+    }
+};
+
+Scene_City.prototype.onBuyCancel = function() {
+    this._buyWindow.deactivate();
+    this._buyWindow.deselect();
+    this._buyWindow.hide();
     this._commandWindow.activate();
 };
 
 Scene_City.prototype.onSellOk = function() {
     const city = $gameMap.empire().cities()[this._index];
     const item = this._builtWindow.item();
-    $gameMap.empire().addGold(item.sell);
+    $gameMap.empire().addGold(item.construct);
     city.removeBuilding(item.name);
 
     this._sellWindow.hide();
@@ -702,10 +772,12 @@ Window_CityBuildings.prototype.drawItem = function(index) {
         const rect = this.itemLineRect(index);
         this.changePaintOpacity(true);
         this.resetTextColor();
-        const cost = item.construct;
-        const textWidth = this.textWidth(cost);
+        const progress = py06pd.CityBuilder.vocabTurnsLeft
+            .replace("{turns}", Math.ceil(item.construct / this._city.productionYield()).toString());
+
+        const textWidth = this.textWidth(progress);
         this.drawText(item.label, rect.x, rect.y, rect.width - textWidth);
-        this.drawText(cost, rect.x, rect.y, rect.width, "right");
+        this.drawText(progress, rect.x, rect.y, rect.width, "right");
         this.changePaintOpacity(true);
     }
 };
@@ -738,7 +810,9 @@ Window_CityBuild.prototype.refresh = function() {
     this.contents.clear();
     const unit = this._city.buildObject();
     if (unit) {
-        const progress = this._city.buildProgress() + "/" + unit.construct;
+        const progress = py06pd.CityBuilder.vocabTurnsLeft
+            .replace("{turns}", Math.ceil(Math.max(unit.construct - this._city.buildProgress(), 0) / this._city.productionYield()).toString());
+
         const textWidth = this.textWidth(progress);
         this.drawText(this._city.buildObject().label, rect.x, rect.y, rect.width - textWidth);
         this.drawText(progress, rect.x, rect.y, rect.width, "right");
@@ -799,6 +873,60 @@ Window_CityBuilt.prototype.drawItem = function(index) {
         this.drawText(item.label, rect.x, rect.y, width - textWidth);
         this.changePaintOpacity(true);
     }
+};
+
+//=============================================================================
+// Window_CityBuy
+//=============================================================================
+
+function Window_CityBuy() {
+    this.initialize(...arguments);
+}
+
+Window_CityBuy.prototype = Object.create(Window_Selectable.prototype);
+Window_CityBuy.prototype.constructor = Window_CityBuy;
+
+Window_CityBuy.prototype.initialize = function(rect) {
+    Window_Selectable.prototype.initialize.call(this, rect);
+    this._city = null;
+    this.refresh();
+};
+
+Window_CityBuy.prototype.setCity = function(city) {
+    if (this._city !== city) {
+        this._city = city;
+        this.refresh();
+    }
+};
+
+Window_CityBuy.prototype.isCurrentItemEnabled = function() {
+    return this.isEnabled(this._index);
+};
+
+Window_CityBuy.prototype.isEnabled = function(index) {
+    return index === 0 || (this._city && $gameMap.empire().gold() >= this._city.buyPrice());
+};
+
+Window_CityBuy.prototype.maxItems = function() {
+    return 2;
+};
+
+Window_CityBuy.prototype.drawItem = function(index) {
+    const rect = this.itemLineRect(index);
+    this.changePaintOpacity(this.isEnabled(index));
+    this.resetTextColor();
+    if (index === 0) {
+        this.drawText(py06pd.CityBuilder.vocabChange, rect.x, rect.y, rect.width);
+    } else if (this._city) {
+        const price = this._city.buyPrice();
+        const textWidth = this.textWidth(price);
+        const width = rect.width - ImageManager.iconWidth - 6;
+        this.drawText(py06pd.CityBuilder.vocabBuy, rect.x, rect.y, width - textWidth);
+        this.drawText(price, rect.x, rect.y, width, "right");
+        this.drawIcon(py06pd.CivCore.GoldIcon, rect.x + width + 6, rect.y + (rect.height - ImageManager.iconHeight) / 2);
+    }
+
+    this.changePaintOpacity(true);
 };
 
 //=============================================================================

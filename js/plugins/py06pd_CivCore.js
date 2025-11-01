@@ -161,12 +161,39 @@ Game_City.prototype.buildProgress = function() {
     return this._build ? this._build.value : 0;
 };
 
+Game_City.prototype.completeBuild = function() {
+    const obj = this.buildObject();
+    if (this._build.type === "unit") {
+        this.empire().addUnit(obj.name, this.x, this.y);
+    } else {
+        this.addBuilding(obj.name);
+    }
+    this._build = null;
+};
+
 Game_City.prototype.hasBuilt = function(name) {
     return this._buildings.includes(name);
 };
 
 Game_City.prototype.removeBuilding = function(name) {
     this._buildings.splice(this._buildings.indexOf(name), 1);
+};
+
+Game_City.prototype.canBuy = function() {
+    return this._build && (this._build.type === "unit" || !this.buildObject().wonder);
+};
+
+Game_City.prototype.buyPrice = function() {
+    if (this._build) {
+        const construct = this.buildObject().construct;
+        if (this._build.type === "unit") {
+            return (construct - this.buildProgress()) * ((construct / 10) + 4);
+        }
+
+        return (construct - this.buildProgress()) * 4;
+    }
+
+    return 0;
 };
 
 Game_City.prototype.corruption = function() {
@@ -324,12 +351,7 @@ Game_City.prototype.endTurn = function() {
     if (obj) {
         const next = this._build.value + this.productionYield();
         if (next >= obj.construct) {
-            if (this._build.type === "unit") {
-                this.empire().addUnit(obj.name, this.x, this.y);
-            } else {
-                this.addBuilding(obj.name);
-            }
-            this._build = null;
+            this.completeBuild();
         } else {
             this._build.value = next;
         }
