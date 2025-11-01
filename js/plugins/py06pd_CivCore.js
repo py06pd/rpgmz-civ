@@ -97,9 +97,12 @@ Game_City.prototype.initialize = function(name, empire, x, y) {
     this._y = y;
     this._buildings = [];
     this._build = null;
+    this._entertainers = 0;
     this._foodStorage = 0;
     this._happy = 0;
     this._population = 1;
+    this._scientists = 0;
+    this._taxmen = 0;
     this._unhappy = 0;
     this._workTiles = [{ x, y }];
     const tile = $gameMap.geography(x, y);
@@ -113,7 +116,7 @@ Game_City.prototype.appeal = function(x, y) {
         return 0;
     }
 
-    return (this._happy - this._unhappy) * 32 / (Math.abs(x - this.x) + Math.abs(y - this.y));
+    return (this.happy() - this.unhappy()) * 32 / (Math.abs(x - this.x) + Math.abs(y - this.y));
 };
 
 Game_City.prototype.addBuilding = function(name) {
@@ -124,6 +127,8 @@ Game_City.prototype.buildable = function() {
     const buildings = Object.keys(py06pd.CivData.Buildings).filter(name =>
         $gameMap.empire().learnedTechnology(py06pd.CivData.Buildings[name].requires) &&
         !this.hasBuilt(name) &&
+        (!py06pd.CivData.Buildings[name].requireBuilding ||
+            py06pd.CivData.Buildings[name].requireBuilding.some(n => this.hasBuilt(n))) &&
         (!py06pd.CivData.Buildings[name].wonder || !$gameMap.empires().some(emp => emp.hasBuilt(name))))
         .map(name => ({ ...py06pd.CivData.Buildings[name], name }))
         .sort((a, b) => a.construct === b.construct ?
@@ -164,7 +169,10 @@ Game_City.prototype.buildProgress = function() {
 Game_City.prototype.completeBuild = function() {
     const obj = this.buildObject();
     if (this._build.type === "unit") {
-        this.empire().addUnit(obj.name, this.x, this.y);
+        const unit = this.empire().addUnit(obj.name, this.x, this.y);
+        if (this.buildings().some(build => build.buildVeteran)) {
+            unit.setVeteran(true);
+        }
     } else {
         this.addBuilding(obj.name);
     }
@@ -287,7 +295,7 @@ Game_City.prototype.triggerDisaster = function() {
         case 7: // riot
         case 8: // scandal
         case 9: // corruption
-            if (this._unhappy > this._happy) {
+            if (this.unhappy() > this.happy()) {
                 this._foodStorage = 0;
                 if (this._build) {
                     this._build.value = 0;
@@ -360,7 +368,7 @@ Game_City.prototype.endTurn = function() {
     // growth
     const maxStorage = this.maxFoodStorage();
     this._foodStorage += this.foodYield() - (this._population * 2);
-    if (this._foodStorage > maxStorage) {
+    if (this._foodStorage > maxStorage && (this.hasBuilt("aqueduct") || this._population < 10)) {
         this._population += 1;
         this._foodStorage = this._foodStorage - maxStorage;
         this.autoAddWorkTile();
@@ -376,7 +384,7 @@ Game_City.prototype.foodStorage = function() {
 };
 
 Game_City.prototype.maxFoodStorage = function() {
-    return (this._population + 1) * 10;
+    return (this._population + 1) * (this.hasBuilt("granary") ? 5 : 10);
 };
 
 Game_City.prototype.foodYield = function() {
@@ -384,8 +392,42 @@ Game_City.prototype.foodYield = function() {
         prev + $gameMap.geography(curr.x, curr.y).food(this.empire().government()), 0);
 };
 
-Game_City.prototype.goldYield = function() {
+Game_City.prototype.goldBase = function() {
     return Math.round(this.tradeYield() * this.empire().taxRate() / 100);
+};
+
+Game_City.prototype.goldYield = function() {
+    const baseYield = this.goldBase() + (this._taxmen * 2);
+    return this.buildings().reduce((prev, curr) => prev * (curr.goldRate ? curr.goldRate : 1), baseYield) -
+        this.maintenanceCosts();
+};
+
+Game_City.prototype.happy = function() {
+    return this._happy + Math.floor(this.luxuryYield() / 2);
+};
+
+Game_City.prototype.unhappy = function() {
+    let unhappy = this._unhappy;
+    if (this.hasBuilt("temple") && this.empire().learnedTechnology("mysticism")) {
+        if (this.hasBuilt("oracle")) {
+            unhappy -= 3;
+        } else {
+            unhappy -= 1;
+        }
+    }
+
+    return unhappy - this.buildings()
+        .filter(build => build.content)
+        .reduce((prev, curr) => prev + curr.content, 0);
+};
+
+Game_City.prototype.luxuryBase = function() {
+    return Math.round((this.tradeYield() - this.goldBase()) * this.empire().luxuryRate() / 100);
+};
+
+Game_City.prototype.luxuryYield = function() {
+    const baseYield = this.luxuryBase() + (this._entertainers * 2);
+    return this.buildings().reduce((prev, curr) => prev * (curr.luxuryRate ? curr.luxuryRate : 1), baseYield);
 };
 
 Game_City.prototype.maintenanceCosts = function() {
@@ -409,17 +451,58 @@ Game_City.prototype.nearBy = function(type) {
     return false;
 };
 
+Game_City.prototype.pollution = function() {
+    return Math.max(this.pollutionIndustrial() + this.pollutionPopulation() - 20, 0);
+};
+
+Game_City.prototype.pollutionIndustrial = function() {
+    const baseYield = this.productionYield();
+    if (this.hasBuilt("recycling")) {
+        return baseYield / 3;
+    } else if (this.hasBuilt("hydro") || this.hasBuilt("nuclear")) {
+        return baseYield / 2;
+    }
+
+    return baseYield;
+};
+
+Game_City.prototype.pollutionPopulation = function() {
+    let baseYield = 0;
+    if (!this.hasBuilt("transit")) {
+        if (this.empire().learnedTechnology("industry")) {
+            baseYield = 0.25;
+        }
+        if (this.empire().learnedTechnology("automobile")) {
+            baseYield = 0.5;
+        }
+        if (this.empire().learnedTechnology("mass")) {
+            baseYield = 0.75;
+        }
+        if (this.empire().learnedTechnology("plastics")) {
+            baseYield = 1;
+        }
+    }
+
+    return baseYield * this._population;
+};
+
 Game_City.prototype.population = function() {
     return this._population;
 };
 
-Game_City.prototype.productionYield = function() {
+Game_City.prototype.productionBase = function() {
     return this._workTiles.reduce((prev, curr) =>
         prev + $gameMap.geography(curr.x, curr.y).production(this.empire().government()), 0);
 };
 
+Game_City.prototype.productionYield = function() {
+    const baseYield = this.productionBase();
+    return this.buildings().reduce((prev, curr) => prev * (curr.productionRate ? curr.productionRate : 1), baseYield);
+};
+
 Game_City.prototype.scienceYield = function() {
-    return this.tradeYield() - this.goldYield();
+    const baseYield = this.tradeYield() + (this._scientists * 2) - this.goldBase() - this.luxuryBase();
+    return this.buildings().reduce((prev, curr) => prev * (curr.scienceRate ? curr.scienceRate : 1), baseYield);
 };
 
 Game_City.prototype.specialists = function() {
@@ -1056,7 +1139,7 @@ Game_Empire.prototype.endTurn = function() {
     }
 
     // gold
-    this.addGold(this._cities.reduce((sum, city) => sum + city.goldYield() - city.maintenanceCosts(), 0));
+    this.addGold(this._cities.reduce((sum, city) => sum + city.goldYield(), 0));
 
     this._cities.forEach(city => city.endTurn());
 
