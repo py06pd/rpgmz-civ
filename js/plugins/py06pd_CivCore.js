@@ -19,6 +19,7 @@
 
 var py06pd = py06pd || {};
 py06pd.CivCore = py06pd.CivCore || {};
+py06pd.CivCore.GoldIcon = 313;
 py06pd.CivCore.TileId = 122;
 py06pd.CivCore.vocabDemandBuilding = "Residents of {city} demand a {building}";
 py06pd.CivCore.vocabDemandLowTaxes = "Residents of {city} demand lower taxes";
@@ -120,10 +121,11 @@ Game_City.prototype.addBuilding = function(name) {
 };
 
 Game_City.prototype.buildable = function() {
-    const buildings = py06pd.CivData.Buildings.filter(build =>
-        $gameMap.empire().learnedTechnology(build.requires) &&
-        !this.hasBuilt(build.name) &&
-        (!build.wonder || !$gameMap.empires().some(emp => emp.hasBuilt(build.name))))
+    const buildings = Object.keys(py06pd.CivData.Buildings).filter(name =>
+        $gameMap.empire().learnedTechnology(py06pd.CivData.Buildings[name].requires) &&
+        !this.hasBuilt(name) &&
+        (!py06pd.CivData.Buildings[name].wonder || !$gameMap.empires().some(emp => emp.hasBuilt(name))))
+        .map(name => ({ ...py06pd.CivData.Buildings[name], name }))
         .sort((a, b) => a.construct === b.construct ?
             (a.label > b.label ? 1 : -1) : (a.construct > b.construct ? 1 : -1));
 
@@ -139,13 +141,17 @@ Game_City.prototype.buildableUnits = function() {
             (a.label > b.label ? 1 : -1) : (a.construct > b.construct ? 1 : -1));
 };
 
+Game_City.prototype.buildings = function() {
+    return this._buildings.map(name => py06pd.CivData.Buildings[name]);
+};
+
 Game_City.prototype.buildObject = function() {
     if (this._build) {
-        let data = py06pd.CivData.Buildings;
+        let data = { ...py06pd.CivData.Buildings[this._build.name], name: this._build.name };
         if (this._build.type === "unit") {
-            data = py06pd.CivData.Units;
+            data = py06pd.CivData.Units.find(build => build.name === this._build.name);
         }
-        return data.find(build => build.name === this._build.name);
+        return data;
     }
 
     return null;
@@ -157,6 +163,10 @@ Game_City.prototype.buildProgress = function() {
 
 Game_City.prototype.hasBuilt = function(name) {
     return this._buildings.includes(name);
+};
+
+Game_City.prototype.removeBuilding = function(name) {
+    this._buildings.splice(this._buildings.indexOf(name), 1);
 };
 
 Game_City.prototype.corruption = function() {
@@ -292,7 +302,7 @@ Game_City.prototype.triggerDisaster = function() {
                 if (demand === "taxes") {
                     $gameMessage.add(py06pd.CivCore.vocabDemandLowTaxes);
                 } else if (demand) {
-                    const label = py06pd.CivData.Buildings.find(build => build.name === demand).label;
+                    const label = py06pd.CivData.Buildings[demand].label;
                     $gameMessage.add(py06pd.CivCore.vocabDemandBuilding.replace("{building}", label));
                 }
             }
@@ -357,8 +367,7 @@ Game_City.prototype.goldYield = function() {
 };
 
 Game_City.prototype.maintenanceCosts = function() {
-    return this._buildings.map(name => py06pd.CivData.Buildings.find(build => build.name === name))
-        .filter(build => build.maintain)
+    return this.buildings().filter(build => build.maintain)
         .reduce((prev, curr) => prev + curr.maintain, 0);
 };
 
@@ -417,6 +426,7 @@ Game_City.prototype.autoAddWorkTile = function() {
         for (let x = this.x - 2; x < this.x + 3; x++) {
             const tile = $gameMap.geography(x, y);
             if (
+                (![x + 2, x - 2].includes(this.x) || ![y + 2, y - 2].includes(this.y)) &&
                 !this._workTiles.some(t => t.x === x && t.y === y) &&
                 (!current || tile.food(gov) > current.food(gov) ||
                     (tile.food(gov) === current.food(gov) &&
@@ -1024,7 +1034,7 @@ Game_Empire.prototype.endTurn = function() {
     }
 
     // gold
-    this._gold += this._cities.reduce((sum, city) => sum + city.goldYield() - city.maintenanceCosts(), 0);
+    this.addGold(this._cities.reduce((sum, city) => sum + city.goldYield() - city.maintenanceCosts(), 0));
 
     this._cities.forEach(city => city.endTurn());
 
@@ -1033,6 +1043,10 @@ Game_Empire.prototype.endTurn = function() {
 
 Game_Empire.prototype.gold = function() {
     return this._gold;
+};
+
+Game_Empire.prototype.addGold = function(gold) {
+    this._gold += gold;
 };
 
 Game_Empire.prototype.government = function() {

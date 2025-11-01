@@ -16,6 +16,10 @@ py06pd.CityBuilder.FoodIcon = 276;
 py06pd.CityBuilder.PopulationIcon = 135;
 py06pd.CityBuilder.ProductionIcon = 223;
 py06pd.CityBuilder.TradeIcon = 75;
+py06pd.CityBuilder.vocabBuild = "Build";
+py06pd.CityBuilder.vocabBuilt = "Built";
+py06pd.CityBuilder.vocabManage = "Manage";
+py06pd.CityBuilder.vocabSell = "Sell";
 
 (function() {
 
@@ -92,8 +96,10 @@ Scene_City.prototype.create = function() {
     this.createCommandWindow();
     this.createYieldWindow();
     this.createBFCWindow();
+    this.createBuiltWindow();
     this.createBuildingsWindow();
     this.createBuildWindow();
+    this.createSellWindow();
     this.refreshActor();
 };
 
@@ -117,6 +123,7 @@ Scene_City.prototype.createCommandWindow = function() {
     this._commandWindow.setHelpWindow(this._helpWindow);
     this._commandWindow.setHandler("manage", this.commandManage.bind(this));
     this._commandWindow.setHandler("build", this.commandBuild.bind(this));
+    this._commandWindow.setHandler("built", this.commandBuilt.bind(this));
     this._commandWindow.setHandler("cancel", this.popScene.bind(this));
     this._commandWindow.setHandler("pagedown", this.nextActor.bind(this));
     this._commandWindow.setHandler("pageup", this.previousActor.bind(this));
@@ -167,6 +174,7 @@ Scene_City.prototype.BFCWindowRect = function() {
 Scene_City.prototype.createBuildingsWindow = function() {
     const rect = this.buildingsWindowRect();
     this._buildingsWindow = new Window_CityBuildings(rect);
+    this._buildingsWindow.hide();
     this._buildingsWindow.setHandler("ok", this.onBuildOk.bind(this));
     this._buildingsWindow.setHandler("cancel", this.onBuildCancel.bind(this));
     this.addWindow(this._buildingsWindow);
@@ -198,6 +206,32 @@ Scene_City.prototype.buildWindowRect = function() {
     return new Rectangle(wx, wy, ww, wh);
 };
 
+Scene_City.prototype.createBuiltWindow = function() {
+    const rect = this.buildingsWindowRect();
+    this._builtWindow = new Window_CityBuilt(rect);
+    this._builtWindow.setHandler("ok", this.onBuiltOk.bind(this));
+    this._builtWindow.setHandler("cancel", this.onBuildCancel.bind(this));
+    this.addWindow(this._builtWindow);
+};
+
+Scene_City.prototype.createSellWindow = function() {
+    const rect = this.sellWindowRect();
+    this._sellWindow = new Window_CitySell(rect);
+    this._sellWindow.hide();
+    this._sellWindow.setHandler("ok", this.onSellOk.bind(this));
+    this._sellWindow.setHandler("cancel", this.onSellCancel.bind(this));
+    this.addWindow(this._sellWindow);
+};
+
+Scene_City.prototype.sellWindowRect = function() {
+    const buildingsWindowRect = this.buildingsWindowRect();
+    const ww = buildingsWindowRect.width;
+    const wh = this.calcWindowHeight(1, true);
+    const wx = buildingsWindowRect.x;
+    const wy = Graphics.boxHeight - wh;
+    return new Rectangle(wx, wy, ww, wh);
+};
+
 Scene_City.prototype.needsPageButtons = function() {
     return $gameMap.empire().cities().length > 1;
 };
@@ -209,6 +243,7 @@ Scene_City.prototype.refreshActor = function() {
     this._bfcWindow.setCity(city);
     this._buildingsWindow.setCity(city);
     this._buildWindow.setCity(city);
+    this._builtWindow.setCity(city);
 };
 
 Scene_City.prototype.commandManage = function() {
@@ -219,6 +254,13 @@ Scene_City.prototype.commandManage = function() {
 Scene_City.prototype.commandBuild = function() {
     this._buildingsWindow.activate();
     this._buildingsWindow.select(0);
+    this._buildingsWindow.show();
+    this._builtWindow.hide();
+};
+
+Scene_City.prototype.commandBuilt = function() {
+    this._builtWindow.activate();
+    this._builtWindow.select(0);
 };
 
 Scene_City.prototype.onBFCOk = function() {
@@ -244,17 +286,42 @@ Scene_City.prototype.onBuildOk = function() {
     this._buildingsWindow.activate();
 };
 
+Scene_City.prototype.onBuiltOk = function() {
+    this._sellWindow.setup(this._builtWindow.item().sell);
+};
+
 Scene_City.prototype.onBuildCancel = function() {
+    this._buildingsWindow.deactivate();
     this._buildingsWindow.deselect();
+    this._buildingsWindow.hide();
+    this._builtWindow.deactivate();
+    this._builtWindow.deselect();
+    this._builtWindow.show();
     this._commandWindow.activate();
+};
+
+Scene_City.prototype.onSellOk = function() {
+    const city = $gameMap.empire().cities()[this._index];
+    const item = this._builtWindow.item();
+    $gameMap.empire().addGold(item.sell);
+    city.removeBuilding(item.name);
+
+    this._sellWindow.hide();
+    this._buildingsWindow.refresh();
+    this._builtWindow.refresh();
+    this._builtWindow.select(0);
+    this._builtWindow.activate();
+};
+
+Scene_City.prototype.onSellCancel = function() {
+    this._sellWindow.hide();
+    this._builtWindow.activate();
 };
 
 Scene_City.prototype.onActorChange = function() {
     Scene_MenuBase.prototype.onActorChange.call(this);
+    this.onBuildCancel();
     this.refreshActor();
-    this._buildingsWindow.deselect();
-    this._buildingsWindow.deactivate();
-    this._commandWindow.activate();
 };
 
 Scene_City.prototype.nextActor = function() {
@@ -353,12 +420,13 @@ Window_CityCommand.prototype.initialize = function(rect) {
 };
 
 Window_CityCommand.prototype.maxCols = function() {
-    return 2;
+    return 3;
 };
 
 Window_CityCommand.prototype.makeCommandList = function() {
-    this.addCommand("Manage", "manage");
-    this.addCommand("Build", "build");
+    this.addCommand(py06pd.CityBuilder.vocabManage, "manage");
+    this.addCommand(py06pd.CityBuilder.vocabBuild, "build");
+    this.addCommand(py06pd.CityBuilder.vocabBuilt, "built");
 };
 
 //=============================================================================
@@ -675,6 +743,103 @@ Window_CityBuild.prototype.refresh = function() {
         this.drawText(this._city.buildObject().label, rect.x, rect.y, rect.width - textWidth);
         this.drawText(progress, rect.x, rect.y, rect.width, "right");
     }
+};
+
+//=============================================================================
+// Window_CityBuilt
+//=============================================================================
+
+function Window_CityBuilt() {
+    this.initialize(...arguments);
+}
+
+Window_CityBuilt.prototype = Object.create(Window_Selectable.prototype);
+Window_CityBuilt.prototype.constructor = Window_CityBuilt;
+
+Window_CityBuilt.prototype.initialize = function(rect) {
+    Window_Selectable.prototype.initialize.call(this, rect);
+    this._city = null;
+    this.refresh();
+};
+
+Window_CityBuilt.prototype.setCity = function(city) {
+    if (this._city !== city) {
+        this._city = city;
+        this.refresh();
+    }
+};
+
+Window_CityBuilt.prototype.maxItems = function() {
+    return this._city ? this._city.buildings().length : 0;
+};
+
+Window_CityBuilt.prototype.item = function() {
+    return this.itemAt(this.index());
+};
+
+Window_CityBuilt.prototype.itemAt = function(index) {
+    return this._city ? this._city.buildings()[index] : null;
+};
+
+Window_CityBuilt.prototype.drawItem = function(index) {
+    if (this._city) {
+        const item = this.itemAt(index);
+        const rect = this.itemLineRect(index);
+        this.changePaintOpacity(true);
+        this.resetTextColor();
+        let textWidth = 0;
+        let width = rect.width;
+        if (item.maintain) {
+            const cost = item.maintain;
+            textWidth = this.textWidth(cost);
+            width = rect.width - ImageManager.iconWidth - 6;
+            this.drawText(cost, rect.x, rect.y, width, "right");
+            this.drawIcon(py06pd.CivCore.GoldIcon, rect.x + width + 6, rect.y + (rect.height - ImageManager.iconHeight) / 2);
+        }
+        this.drawText(item.label, rect.x, rect.y, width - textWidth);
+        this.changePaintOpacity(true);
+    }
+};
+
+//=============================================================================
+// Window_CitySell
+//=============================================================================
+
+function Window_CitySell() {
+    this.initialize(...arguments);
+}
+
+Window_CitySell.prototype = Object.create(Window_Selectable.prototype);
+Window_CitySell.prototype.constructor = Window_CitySell;
+
+Window_CitySell.prototype.initialize = function(rect) {
+    Window_Selectable.prototype.initialize.call(this, rect);
+    this._price = 0;
+    this.refresh();
+};
+
+Window_CitySell.prototype.setup = function(price) {
+    this._price = price;
+    this.select(0);
+    this.activate();
+    this.show();
+    this.refresh();
+};
+
+Window_CitySell.prototype.maxItems = function() {
+    return 1;
+};
+
+Window_CitySell.prototype.drawItem = function(index) {
+    const rect = this.itemLineRect(index);
+    this.changePaintOpacity(true);
+    this.resetTextColor();
+    const textWidth = this.textWidth(this._price);
+    const width = rect.width - ImageManager.iconWidth - 6;
+    this.drawText(py06pd.CityBuilder.vocabSell, rect.x, rect.y, width - textWidth);
+    this.drawText(this._price, rect.x, rect.y, width, "right");
+    this.drawIcon(py06pd.CivCore.GoldIcon, rect.x + width + 6, rect.y + (rect.height - ImageManager.iconHeight) / 2);
+    this.changePaintOpacity(true);
 };
 
 //=============================================================================

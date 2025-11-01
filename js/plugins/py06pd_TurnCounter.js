@@ -12,7 +12,6 @@
 
 var py06pd = py06pd || {};
 py06pd.TurnCounter = py06pd.TurnCounter || {};
-py06pd.TurnCounter.goldIcon = 313;
 
 (function() {
 
@@ -206,7 +205,7 @@ Window_TurnCount.prototype.drawGold = function() {
     const rect = this.baseTextRect();
     const y = rect.y + this.lineHeight();
     const empire = $gameMap.empire();
-    this.drawIcon(py06pd.TurnCounter.goldIcon, rect.x, y)
+    this.drawIcon(py06pd.CivCore.GoldIcon, rect.x, y);
     const offset = ImageManager.iconWidth + 6;
     this.drawText(empire.gold(), rect.x + offset, y + (ImageManager.iconHeight - this.lineHeight()) / 2, rect.width - offset);
 };
